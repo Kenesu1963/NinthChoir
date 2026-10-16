@@ -72,6 +72,39 @@ public class PlayerController : MonoBehaviour
     public bool FacingRight => facingRight;
     public float SpeedMultiplier { get; set; } = 1f;
 
+    // --- Clinging to a wall (used by the Pick tool) ---
+    private bool isClinging;
+    private bool clingLockout; // after jumping off, you must let go of the button and press it again
+
+    public bool IsClinging => isClinging;
+    public Bounds BodyBounds => bodyCollider != null ? bodyCollider.bounds : new Bounds(transform.position, Vector3.one);
+
+    /// <summary>Sticks the player to a wall. wallSide: -1 = wall on the left, +1 = wall on the right.</summary>
+    public bool TryBeginCling(int wallSide)
+    {
+        if (isClinging) return true;
+        if (clingLockout || isDashing || InputLock.IsLocked) return false;
+
+        isClinging = true;
+        if (wallSide > 0 && !facingRight) Flip();
+        else if (wallSide < 0 && facingRight) Flip();
+        rb.linearVelocity = Vector2.zero;
+        return true;
+    }
+
+    /// <summary>Stops clinging (the wall disappeared). Does not reset the jump lockout.</summary>
+    public void StopCling()
+    {
+        isClinging = false;
+    }
+
+    /// <summary>The pick button was released: stop clinging and allow clinging again next time.</summary>
+    public void ReleaseCling()
+    {
+        isClinging = false;
+        clingLockout = false;
+    }
+
     /// <summary>Direction of the held keys (8 directions). With no direction held, the way you're facing.</summary>
     public Vector2 AimDirection
     {
@@ -148,7 +181,7 @@ public class PlayerController : MonoBehaviour
 
         // --- Ground check ---
         isGrounded = CheckGrounded();
-        if (isGrounded && !isDashing)
+        if ((isGrounded || isClinging) && !isDashing) // clinging counts like standing on something
         {
             airDashAvailable = true;
             doubleJumpAvailable = true;
@@ -158,7 +191,7 @@ public class PlayerController : MonoBehaviour
         UpdateCrouch();
 
         // --- Timers ---
-        if (isGrounded) coyoteCounter = coyoteTime;
+        if (isGrounded || isClinging) coyoteCounter = coyoteTime;
         else coyoteCounter -= Time.deltaTime;
 
         if (jumpPressed) jumpBufferCounter = jumpBufferTime;
@@ -189,6 +222,11 @@ public class PlayerController : MonoBehaviour
         if (jumpBufferCounter > 0f && coyoteCounter > 0f)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce); // use rb.velocity on Unity 2022 or older
+            if (isClinging)
+            {
+                isClinging = false;
+                clingLockout = true; // jumping off a wall: no sticking again until you re-press the button
+            }
             jumpBufferCounter = 0f;
             coyoteCounter = 0f;
         }
@@ -207,6 +245,13 @@ public class PlayerController : MonoBehaviour
         {
             rb.gravityScale = 0f;
             rb.linearVelocity = dashDirection * dashSpeed;
+            return;
+        }
+
+        if (isClinging)
+        {
+            rb.gravityScale = 0f;
+            rb.linearVelocity = Vector2.zero;
             return;
         }
 
@@ -237,7 +282,7 @@ public class PlayerController : MonoBehaviour
     {
         if (bodyCollider == null) return;
 
-        bool wantsCrouch = GameControls.Held(GameAction.Crouch) && isGrounded && !isDashing && !InputLock.IsLocked;
+        bool wantsCrouch = GameControls.Held(GameAction.Crouch) && isGrounded && !isDashing && !isClinging && !InputLock.IsLocked;
 
         if (wantsCrouch && !isCrouching)
         {
@@ -310,6 +355,7 @@ public class PlayerController : MonoBehaviour
         if (dir == Vector2.zero) dir = facingRight ? Vector2.right : Vector2.left;
 
         dashDirection = dir.normalized;
+        isClinging = false;
         isDashing = true;
         dashTimer = dashDuration;
         if (!isGrounded) airDashAvailable = false;

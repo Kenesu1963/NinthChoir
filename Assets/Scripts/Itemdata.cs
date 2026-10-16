@@ -21,7 +21,15 @@ public class ItemUseContext
     public Vector2 origin;    // where attacks start, relative to the player (lower while crouching)
     public bool showDebugVisuals;
 
-    public Hitbox heldHitbox; // used by hold items such as the shield
+    // Scratch space for whichever item is being used in this slot
+    public Hitbox heldHitbox; // shield block box, weapon wind-up preview
+    public GameObject effect; // e.g. the charge glow
+    public float chargeTimer;
+    public bool charged;
+    public bool fired;
+
+    /// <summary>True when a hold item is stopped by something other than releasing the button (dash, dialogue, unequip...).</summary>
+    public bool interrupted;
 }
 
 /// <summary>
@@ -39,10 +47,10 @@ public abstract class ItemData : ScriptableObject
     [Header("Use")]
     [Tooltip("Divine Energy spent every time the item is used. 0 = free.")]
     public int divineEnergyCost = 0;
-    [Tooltip("Seconds before the item can be used again.")]
+    [Tooltip("Seconds before the item can be used again, counted from the moment the button is pressed.")]
     public float cooldown = 0.25f;
 
-    /// <summary>True = active while the button is held (shield). False = fires once per press.</summary>
+    /// <summary>True = active while the button is held (shield, pick, charged spells). False = fires once per press.</summary>
     public abstract bool IsHold { get; }
 
     /// <summary>Walking speed multiplier while a hold item is active.</summary>
@@ -50,6 +58,18 @@ public abstract class ItemData : ScriptableObject
 
     /// <summary>If true, the other action buttons do nothing while this item is held.</summary>
     public virtual bool LocksOtherActionsWhileHeld => false;
+
+    /// <summary>Seconds between pressing the button and the item taking effect (press items only).</summary>
+    public virtual float WindUpTime => 0f;
+
+    /// <summary>Walking speed multiplier during the wind-up.</summary>
+    public virtual float WindUpMoveSpeedMultiplier => 1f;
+
+    /// <summary>
+    /// True = the Divine Energy cost is paid when the button is pressed.
+    /// False = the item charges the cost itself (e.g. a charged spell that is only paid when it fires).
+    /// </summary>
+    public virtual bool SpendsCostOnActivate => true;
 
     /// <summary>Stats shown by the inventory's "Check" option. Item types add their own lines.</summary>
     public virtual string GetStatsText()
@@ -64,8 +84,11 @@ public abstract class ItemData : ScriptableObject
         return value.ToString("0.##", CultureInfo.InvariantCulture);
     }
 
-    public virtual void Use(ItemUseContext context) { }        // press items
-    public virtual void BeginHold(ItemUseContext context) { }  // hold items: button pressed
-    public virtual void UpdateHold(ItemUseContext context) { } // hold items: every frame while held
-    public virtual void EndHold(ItemUseContext context) { }    // hold items: released or interrupted
+    public virtual void Use(ItemUseContext context) { }          // press items: when it takes effect
+    public virtual void BeginWindUp(ItemUseContext context) { }  // press items with a wind-up
+    public virtual void UpdateWindUp(ItemUseContext context) { }
+    public virtual void EndWindUp(ItemUseContext context) { }    // wind-up finished or cancelled
+    public virtual void BeginHold(ItemUseContext context) { }    // hold items: button pressed
+    public virtual void UpdateHold(ItemUseContext context) { }   // hold items: every frame while held
+    public virtual void EndHold(ItemUseContext context) { }      // hold items: released or interrupted
 }

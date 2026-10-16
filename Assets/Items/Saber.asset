@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f5798ba0a5960873a006a292f61f5e5, type: 3}
+  m_Name: Saber
+  m_EditorClassIdentifier: Assembly-CSharp::SaberItem
+  itemName: Saber
+  category: 0
+  description: A heavy blade. It takes a moment to wind up, but the sweep is huge
+    and hits hard.
+  icon: {fileID: 0}
+  divineEnergyCost: 0
+  cooldown: 0.5
+  damage: 2
+  duration: 0.15
+  size: {x: 1.35, y: 1.5}
+  distance: 1
+  windUpTime: 0.1
+  windUpMoveSpeedMultiplier: 0.9
+  recoilSpeed: 5
+  recoilDuration: 0.15
+  bounceOnDownAttack: 1

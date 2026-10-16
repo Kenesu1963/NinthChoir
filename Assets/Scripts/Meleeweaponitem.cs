@@ -10,6 +10,11 @@ public class MeleeWeaponItem : WeaponItem
     public Vector2 size = new Vector2(1.5f, 0.5f);      // length, thickness
     public float distance = 1.1f;                       // distance from the player's center
 
+    [Header("Wind-up (0 = instant)")]
+    [Tooltip("Seconds between pressing the button and the hit. A faint box shows where it will land.")]
+    public float windUpTime = 0f;
+    [Range(0f, 1f)] public float windUpMoveSpeedMultiplier = 1f;
+
     [Header("Hit feedback")]
     public float recoilSpeed = 7f;                      // pushback on the player when it connects
     public float recoilDuration = 0.12f;
@@ -23,11 +28,38 @@ public class MeleeWeaponItem : WeaponItem
     }
 
     public override bool IsHold => false;
+    public override float WindUpTime => windUpTime;
+    public override float WindUpMoveSpeedMultiplier => windUpMoveSpeedMultiplier;
 
     public override string GetStatsText()
     {
-        return base.GetStatsText() + "\nDamage: " + damage + "\nHurtbox lasts: " + Num(duration) + "s";
+        string text = base.GetStatsText() + "\nDamage: " + damage + "\nHurtbox lasts: " + Num(duration) + "s";
+        if (windUpTime > 0f) text += "\nWind-up: " + Num(windUpTime) + "s";
+        return text;
     }
+
+    // --- Wind-up: a faint preview of the hurtbox follows your aim until the hit lands ---
+
+    public override void BeginWindUp(ItemUseContext c)
+    {
+        c.heldHitbox = Hitbox.Spawn(Hitbox.Kind.Telegraph, c.owner, c.aim, size, distance, 0f, 0,
+                                    c.showDebugVisuals, c.origin);
+    }
+
+    public override void UpdateWindUp(ItemUseContext c)
+    {
+        if (c.heldHitbox == null) return;
+        c.heldHitbox.SetDirection(c.aim);
+        c.heldHitbox.SetOriginOffset(c.origin);
+    }
+
+    public override void EndWindUp(ItemUseContext c)
+    {
+        if (c.heldHitbox != null) Destroy(c.heldHitbox.gameObject);
+        c.heldHitbox = null;
+    }
+
+    // --- The hit ---
 
     public override void Use(ItemUseContext c)
     {

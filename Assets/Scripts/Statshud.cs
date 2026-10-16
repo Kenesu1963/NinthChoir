@@ -12,6 +12,10 @@ public class StatsHUD : MonoBehaviour
     private Font font;
     private Text infoText;
     private Text loadoutText;
+    private Text messageText;
+    private float messageTimer;
+
+    public static StatsHUD Instance { get; private set; }
 
     public static StatsHUD Create(PlayerStats stats)
     {
@@ -23,6 +27,7 @@ public class StatsHUD : MonoBehaviour
 
     private void Init(PlayerStats owner)
     {
+        Instance = this;
         stats = owner;
         combat = owner.GetComponent<PlayerCombat>();
 
@@ -33,8 +38,26 @@ public class StatsHUD : MonoBehaviour
         Refresh();
     }
 
+    /// <summary>Shows a short message under the stats panel for a couple of seconds.</summary>
+    public static void Show(string text)
+    {
+        if (Instance == null) return;
+        Instance.messageText.text = text;
+        Instance.messageTimer = 2.5f;
+    }
+
+    private void Update()
+    {
+        if (messageTimer > 0f)
+        {
+            messageTimer -= Time.unscaledDeltaTime;
+            if (messageTimer <= 0f) messageText.text = "";
+        }
+    }
+
     private void OnDestroy()
     {
+        if (Instance == this) Instance = null;
         if (stats != null) stats.Changed -= Refresh;
         if (combat != null) combat.LoadoutChanged -= Refresh;
     }
@@ -97,6 +120,19 @@ public class StatsHUD : MonoBehaviour
         loadoutText = MakeText("Loadout", panelRect, 20);
         Stretch(loadoutText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
                 new Vector2(14f, 8f), new Vector2(-14f, 80f));
+
+        // Message line under the panel
+        messageText = MakeText("Message", canvasGO.transform, 22);
+        RectTransform messageRect = messageText.rectTransform;
+        messageRect.anchorMin = new Vector2(0f, 1f);
+        messageRect.anchorMax = new Vector2(0f, 1f);
+        messageRect.pivot = new Vector2(0f, 1f);
+        messageRect.sizeDelta = new Vector2(600f, 30f);
+        messageRect.anchoredPosition = new Vector2(16f, -270f);
+        Outline messageOutline = messageText.gameObject.AddComponent<Outline>();
+        messageOutline.effectColor = new Color(0f, 0f, 0f, 0.9f);
+        messageOutline.effectDistance = new Vector2(2f, -2f);
+        messageText.text = "";
     }
 
     private Text MakeText(string objectName, Transform parent, int size)

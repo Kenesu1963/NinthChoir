@@ -28,7 +28,7 @@ public static class DebugVisuals
 /// </summary>
 public class Hitbox : MonoBehaviour
 {
-    public enum Kind { Attack, Block }
+    public enum Kind { Attack, Block, Telegraph }
 
     private Kind kind;
     private Transform owner;
@@ -62,7 +62,8 @@ public class Hitbox : MonoBehaviour
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = DebugVisuals.White;
             sr.sortingOrder = 20;
-            sr.color = kind == Kind.Attack ? new Color(1f, 0.2f, 0.2f, 0.55f)
+            sr.color = kind == Kind.Telegraph ? new Color(1f, 1f, 1f, 0.18f)
+                     : kind == Kind.Attack ? new Color(1f, 0.2f, 0.2f, 0.55f)
                                            : new Color(0.2f, 0.6f, 1f, 0.55f);
         }
 
@@ -105,6 +106,8 @@ public class Hitbox : MonoBehaviour
 
     private void Scan()
     {
+        if (kind == Kind.Telegraph) return; // only a visual
+
         float angle = transform.eulerAngles.z;
         Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, size, angle);
 

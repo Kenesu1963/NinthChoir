@@ -23,8 +23,16 @@ public class PlayerInventory : MonoBehaviour
     /// <summary>Fired when an item is added.</summary>
     public event Action Changed;
 
+    public static PlayerInventory Instance { get; private set; }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     private void Awake()
     {
+        Instance = this;
         int categories = Enum.GetValues(typeof(ItemCategory)).Length;
         itemsByCategory = new List<ItemData>[categories];
         for (int i = 0; i < categories; i++) itemsByCategory[i] = new List<ItemData>();
@@ -65,6 +73,27 @@ public class PlayerInventory : MonoBehaviour
     }
 
     public PlayerCombat Combat => combat;
+
+    /// <summary>The name of the inventory page for a category.</summary>
+    public static string PageName(ItemCategory category)
+    {
+        switch (category)
+        {
+            case ItemCategory.Weapon: return "Body";
+            case ItemCategory.Tool: return "Mind";
+            default: return "Soul";
+        }
+    }
+
+    public bool Has(ItemData item)
+    {
+        return item != null && itemsByCategory[(int)item.category].Contains(item);
+    }
+
+    public bool IsPageFull(ItemCategory category)
+    {
+        return itemsByCategory[(int)category].Count >= SlotsPerPage;
+    }
 
     public bool IsEquipped(ItemData item)
     {

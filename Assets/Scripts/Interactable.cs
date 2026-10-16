@@ -15,6 +15,9 @@ public abstract class Interactable : MonoBehaviour
 
     public string Prompt => prompt;
 
+    /// <summary>False = ignored for now (e.g. an opened chest, or loot still in the air).</summary>
+    public virtual bool IsAvailable => true;
+
     public abstract void Interact();
 
     protected virtual void OnEnable()
@@ -35,6 +38,7 @@ public abstract class Interactable : MonoBehaviour
 
         foreach (Interactable i in all)
         {
+            if (!i.IsAvailable) continue;
             float sqr = ((Vector2)i.transform.position - position).sqrMagnitude;
             if (sqr <= i.interactRadius * i.interactRadius && sqr < bestSqr)
             {

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0eaf28d458fcc05a873eb6113f8b704, type: 3}
+  m_Name: LightBeam
+  m_EditorClassIdentifier: Assembly-CSharp::LightBeamIncantationItem
+  itemName: Light Beam
+  category: 2
+  description: Hold to gather light, then release to fire a beam that burns everything
+    in its path. Walls stop it, enemies don't.
+  icon: {fileID: 0}
+  divineEnergyCost: 3
+  cooldown: 0
+  chargeTime: 1
+  fireAutomaticallyWhenCharged: 0
+  moveSpeedWhileCharging: 0.9
+  beamDuration: 0.5
+  tickInterval: 0.1
+  damagePerTick: 1
+  maxLength: 14
+  beamWidth: 0.7
+  startDistance: 0.6

@@ -38,15 +38,23 @@ public class PlayerStats : MonoBehaviour, IDamageable
     public int Money => money;
     public bool IsDead => health <= 0;
 
+    public static PlayerStats Instance { get; private set; }
+
     /// <summary>Fired whenever health, DE or money changes.</summary>
     public event Action Changed;
     public event Action Died;
 
     private void Awake()
     {
+        Instance = this;
         health = maxHealth;
         divineEnergy = maxDivineEnergy;
         money = startingMoney;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     private void Start()
