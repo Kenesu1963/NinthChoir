@@ -18,10 +18,16 @@ public class MeleeWeaponItem : WeaponItem
     public MeleeWeaponItem()
     {
         itemName = "Rapier";
+        description = "A quick thrust in the direction you aim. It pushes you back a little when it hits.";
         cooldown = 0.25f;
     }
 
     public override bool IsHold => false;
+
+    public override string GetStatsText()
+    {
+        return base.GetStatsText() + "\nDamage: " + damage + "\nHurtbox lasts: " + Num(duration) + "s";
+    }
 
     public override void Use(ItemUseContext c)
     {

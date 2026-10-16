@@ -11,7 +11,7 @@ public class CameraFollow : MonoBehaviour
 
     [Header("Look down when falling")]
     [SerializeField] private float fallLookDownAmount = 3f;          // how far the camera moves down
-    [SerializeField] private float fallSpeedThreshold = 6f;          // fall speed needed to trigger it
+    [SerializeField] private float fallTimeBeforeLookDown = 0.4f;    // seconds of continuous falling before the camera starts looking down
     [SerializeField] private float lookDownSmoothTime = 0.35f;       // how slowly it moves down
     [SerializeField] private float lookResetSmoothTime = 0.2f;       // how fast it comes back up
 
@@ -19,6 +19,8 @@ public class CameraFollow : MonoBehaviour
     private Vector2 followVelocity;
     private float currentLookOffset;
     private float lookVelocity;
+    private float fallTimer;
+    private const float MinFallSpeed = 0.5f; // anything slower than this doesn't count as falling
 
     private void Start()
     {
@@ -34,9 +36,14 @@ public class CameraFollow : MonoBehaviour
     private void LateUpdate()
     {
         if (target == null) return;
+        if (Time.deltaTime <= 0f) return; // game is paused (inventory open)
 
         // --- Look down while falling ---
-        bool isFalling = targetRb != null && targetRb.linearVelocity.y < -fallSpeedThreshold; // use .velocity on Unity 2022 or older
+        bool fallingNow = targetRb != null && targetRb.linearVelocity.y < -MinFallSpeed; // use .velocity on Unity 2022 or older
+        if (fallingNow) fallTimer += Time.deltaTime;
+        else fallTimer = 0f;
+
+        bool isFalling = fallTimer >= fallTimeBeforeLookDown;
         float desiredLook = isFalling ? -fallLookDownAmount : 0f;
         float smooth = isFalling ? lookDownSmoothTime : lookResetSmoothTime;
         currentLookOffset = Mathf.SmoothDamp(currentLookOffset, desiredLook, ref lookVelocity, smooth);

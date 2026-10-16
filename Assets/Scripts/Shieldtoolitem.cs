@@ -12,10 +12,16 @@ public class ShieldToolItem : ToolItem
     public ShieldToolItem()
     {
         itemName = "Shield";
+        description = "Hold the button to raise it in the aimed direction. It blocks enemy projectiles.";
         cooldown = 0f;
     }
 
     public override bool IsHold => true;
+
+    public override string GetStatsText()
+    {
+        return base.GetStatsText() + "\nHold to block\nWalking speed while held: x" + Num(moveSpeedMultiplier);
+    }
     public override float HeldMoveSpeedMultiplier => moveSpeedMultiplier;
     public override bool LocksOtherActionsWhileHeld => true; // blocking commits you: no other actions
 

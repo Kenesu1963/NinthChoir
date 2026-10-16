@@ -8,6 +8,7 @@ using UnityEngine;
 /// </summary>
 [RequireComponent(typeof(PlayerController))]
 [RequireComponent(typeof(PlayerStats))]
+[RequireComponent(typeof(PlayerInventory))]
 public class PlayerCombat : MonoBehaviour
 {
     [Header("Equipped items (drag item assets here)")]
@@ -53,6 +54,69 @@ public class PlayerCombat : MonoBehaviour
         return null;
     }
 
+    /// <summary>Which action button the item is equipped on (false if it isn't equipped).</summary>
+    public bool TryGetEquippedAction(ItemData item, out GameAction action)
+    {
+        action = GameAction.Action1;
+        if (item == null || slots == null) return false;
+        foreach (Slot s in slots)
+        {
+            if (s.item == item)
+            {
+                action = s.action;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void Unequip(GameAction action)
+    {
+        Equip(action, null);
+    }
+
+    /// <summary>Exchanges the items of two action buttons (an empty button just receives the item).</summary>
+    public void SwapSlots(GameAction a, GameAction b)
+    {
+        Slot slotA = null;
+        Slot slotB = null;
+        foreach (Slot s in slots)
+        {
+            if (s.action == a) slotA = s;
+            if (s.action == b) slotB = s;
+        }
+        if (slotA == null || slotB == null || slotA == slotB) return;
+
+        foreach (Slot s in new[] { slotA, slotB })
+        {
+            if (s.holding && s.item != null)
+            {
+                s.item.EndHold(s.context);
+                s.holding = false;
+            }
+        }
+
+        ItemData tempItem = slotA.item;
+        slotA.item = slotB.item;
+        slotB.item = tempItem;
+
+        float tempTime = slotA.nextUseTime; // the cooldown follows the item
+        slotA.nextUseTime = slotB.nextUseTime;
+        slotB.nextUseTime = tempTime;
+
+        LoadoutChanged?.Invoke();
+    }
+
+    public bool IsEquipped(ItemData item)
+    {
+        if (item == null || slots == null) return false;
+        foreach (Slot s in slots)
+        {
+            if (s.item == item) return true;
+        }
+        return false;
+    }
+
     public void Equip(GameAction action, ItemData item)
     {
         foreach (Slot s in slots)
@@ -64,6 +128,23 @@ public class PlayerCombat : MonoBehaviour
                 s.item.EndHold(s.context);
                 s.holding = false;
             }
+            // An item can only be on one button: if it's already equipped elsewhere, it moves here
+            if (item != null)
+            {
+                foreach (Slot other in slots)
+                {
+                    if (other != s && other.item == item)
+                    {
+                        if (other.holding)
+                        {
+                            other.item.EndHold(other.context);
+                            other.holding = false;
+                        }
+                        other.item = null;
+                    }
+                }
+            }
+
             s.item = item;
             LoadoutChanged?.Invoke();
             return;
@@ -77,6 +158,7 @@ public class PlayerCombat : MonoBehaviour
         controller = GetComponent<PlayerController>();
         stats = GetComponent<PlayerStats>();
         if (stats == null) stats = gameObject.AddComponent<PlayerStats>();
+        if (GetComponent<PlayerInventory>() == null) gameObject.AddComponent<PlayerInventory>();
 
         slots = new Slot[]
         {
@@ -103,6 +185,13 @@ public class PlayerCombat : MonoBehaviour
 
     private void Update()
     {
+        // --- Inventory open: the game is paused, so no items can be used ---
+        if (InventoryMenu.IsOpen)
+        {
+            ReleaseAllHolds();
+            return;
+        }
+
         // --- Talking: the player is frozen and can't use items until the dialogue closes ---
         if (DialogueManager.IsOpen)
         {

@@ -1,3 +1,4 @@
+using System.Globalization;
 using UnityEngine;
 
 /// <summary>
@@ -49,6 +50,19 @@ public abstract class ItemData : ScriptableObject
 
     /// <summary>If true, the other action buttons do nothing while this item is held.</summary>
     public virtual bool LocksOtherActionsWhileHeld => false;
+
+    /// <summary>Stats shown by the inventory's "Check" option. Item types add their own lines.</summary>
+    public virtual string GetStatsText()
+    {
+        return "Category: " + category +
+               "\nDivine Energy cost: " + (divineEnergyCost > 0 ? divineEnergyCost.ToString() : "none") +
+               "\nCooldown: " + Num(cooldown) + "s";
+    }
+
+    protected static string Num(float value)
+    {
+        return value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
 
     public virtual void Use(ItemUseContext context) { }        // press items
     public virtual void BeginHold(ItemUseContext context) { }  // hold items: button pressed

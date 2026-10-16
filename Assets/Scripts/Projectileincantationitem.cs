@@ -14,11 +14,17 @@ public class ProjectileIncantationItem : IncantationItem
     public ProjectileIncantationItem()
     {
         itemName = "Divine Bolt";
+        description = "Fires a bolt of divine energy in a straight line in the aimed direction.";
         divineEnergyCost = 1;
         cooldown = 0.4f;
     }
 
     public override bool IsHold => false;
+
+    public override string GetStatsText()
+    {
+        return base.GetStatsText() + "\nDamage: " + damage + "\nSpeed: " + Num(speed);
+    }
 
     public override void Use(ItemUseContext c)
     {

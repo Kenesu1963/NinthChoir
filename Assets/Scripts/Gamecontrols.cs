@@ -5,7 +5,7 @@ using UnityEngine;
 /// The three action buttons are neutral: they don't do anything by themselves.
 /// What each one does depends on the item equipped in that slot (see PlayerCombat).
 /// </summary>
-public enum GameAction { Action1, Action2, Action3, Crouch }
+public enum GameAction { Action1, Action2, Action3, Crouch, Inventory }
 
 /// <summary>
 /// Central place for the action keys. Defaults: J = action 1, K = action 2, L = action 3, S / Down = crouch.
@@ -21,6 +21,7 @@ public static class GameControls
         { GameAction.Action2, KeyCode.K },
         { GameAction.Action3, KeyCode.L },
         { GameAction.Crouch,  KeyCode.S },
+        { GameAction.Inventory, KeyCode.F },
     };
 
     private static readonly Dictionary<GameAction, KeyCode> alternate = new Dictionary<GameAction, KeyCode>

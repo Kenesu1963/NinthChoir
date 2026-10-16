@@ -138,7 +138,7 @@ public class PlayerController : MonoBehaviour
         jumpHeld = Input.GetKey(KeyCode.Space);
 
         // --- Talking to an NPC / reading a sign: the player stands still ---
-        if (DialogueManager.IsOpen)
+        if (InputLock.IsLocked)
         {
             moveInput = 0f;
             verticalInput = 0f;
@@ -171,7 +171,7 @@ public class PlayerController : MonoBehaviour
         else if (moveInput < 0f && facingRight) Flip();
 
         // --- Start dash (Shift) ---
-        bool dashPressed = (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) && !DialogueManager.IsOpen;
+        bool dashPressed = (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) && !InputLock.IsLocked;
         if (dashPressed && !isDashing && dashCooldownTimer <= 0f && (isGrounded || airDashAvailable))
         {
             StartDash();
@@ -237,7 +237,7 @@ public class PlayerController : MonoBehaviour
     {
         if (bodyCollider == null) return;
 
-        bool wantsCrouch = GameControls.Held(GameAction.Crouch) && isGrounded && !isDashing && !DialogueManager.IsOpen;
+        bool wantsCrouch = GameControls.Held(GameAction.Crouch) && isGrounded && !isDashing && !InputLock.IsLocked;
 
         if (wantsCrouch && !isCrouching)
         {
