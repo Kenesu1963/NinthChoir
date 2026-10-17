@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91a3eccdf7fd15af49e43000561ef737, type: 3}
+  m_Name: Tilapia
+  m_EditorClassIdentifier: Assembly-CSharp::FoodItem
+  itemName: Tilapia
+  category: 3
+  description: Grilled tilapia, fresh from the river. A steady recovery.
+  icon: {fileID: 0}
+  divineEnergyCost: 0
+  cooldown: 0.5
+  maxStack: 9
+  healPerTick: 1
+  tickInterval: 1.5
+  ticks: 5
