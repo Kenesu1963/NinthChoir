@@ -89,6 +89,8 @@ public class PlayerStats : MonoBehaviour, IDamageable
     private void Start()
     {
         if (showHUD) StatsHUD.Create(this);
+        RespawnManager.EnsureExists(); // remembers where the level starts
+        DeathScreen.Create(this);
     }
 
     private void Update()
@@ -158,6 +160,30 @@ public class PlayerStats : MonoBehaviour, IDamageable
         Changed?.Invoke();
     }
 
+    /// <summary>Instant death (death planes, traps). Does nothing if already dead.</summary>
+    public void Kill()
+    {
+        if (IsDead) return;
+
+        health = 0;
+        regenerations.Clear();
+        strengthTimer = 0f;
+        Changed?.Invoke();
+
+        Debug.Log(characterName + " has fallen.");
+        Died?.Invoke();
+    }
+
+    /// <summary>Brings the player back with full health and Divine Energy (money and items are kept).</summary>
+    public void Revive()
+    {
+        health = maxHealth;
+        divineEnergy = maxDivineEnergy;
+        regenerations.Clear();
+        strengthTimer = 0f;
+        Changed?.Invoke();
+    }
+
     // ---------------- Temporary effects ----------------
 
     /// <summary>Heals "amount" HP every "interval" seconds, "ticks" times. Several can run at once.</summary>
@@ -224,6 +250,9 @@ public class PlayerStats : MonoBehaviour, IDamageable
 
     [ContextMenu("Test: take 1 damage")]
     private void TestDamage() { TakeDamage(1, Vector2.zero); }
+
+    [ContextMenu("Test: die")]
+    private void TestDie() { Kill(); }
 
     [ContextMenu("Test: heal 1")]
     private void TestHeal() { Heal(1); }

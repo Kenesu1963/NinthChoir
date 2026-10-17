@@ -92,6 +92,29 @@ public class PlayerController : MonoBehaviour
         return true;
     }
 
+    /// <summary>Moves the player somewhere instantly and clears dashing, clinging, recoil and speed. Used when respawning.</summary>
+    public void TeleportTo(Vector2 position)
+    {
+        isDashing = false;
+        dashTimer = 0f;
+        dashCooldownTimer = 0f;
+        isClinging = false;
+        clingLockout = false;
+        recoilTimer = 0f;
+        jumpBufferCounter = 0f;
+        coyoteCounter = 0f;
+
+        if (isCrouching)
+        {
+            isCrouching = false;
+            ApplyColliderHeight(1f);
+        }
+
+        rb.linearVelocity = Vector2.zero;
+        rb.position = position;
+        transform.position = position;
+    }
+
     /// <summary>Stops clinging (the wall disappeared). Does not reset the jump lockout.</summary>
     public void StopCling()
     {

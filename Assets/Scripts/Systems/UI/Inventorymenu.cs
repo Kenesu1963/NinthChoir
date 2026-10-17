@@ -161,7 +161,7 @@ public class InventoryMenu : MonoBehaviour
     {
         if (!IsOpen)
         {
-            if (GameControls.Pressed(GameAction.Inventory) && !DialogueManager.IsOpen && !ShopMenu.IsOpen) Open();
+            if (GameControls.Pressed(GameAction.Inventory) && !InputLock.IsLocked) Open();
             return;
         }
 

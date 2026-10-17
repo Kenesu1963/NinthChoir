@@ -33,6 +33,18 @@ public class CameraFollow : MonoBehaviour
         }
     }
 
+    /// <summary>Jumps straight to the player without smoothing (used after respawning).</summary>
+    public void SnapToTarget()
+    {
+        if (target == null) return;
+
+        Vector3 start = target.position + (Vector3)offset;
+        transform.position = new Vector3(start.x, start.y, transform.position.z);
+        followVelocity = Vector2.zero;
+        currentLookOffset = 0f;
+        lookVelocity = 0f;
+    }
+
     private void LateUpdate()
     {
         if (target == null) return;

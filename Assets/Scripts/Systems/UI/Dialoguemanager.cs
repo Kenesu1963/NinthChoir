@@ -28,6 +28,12 @@ public class DialogueManager : MonoBehaviour
     public static bool IsOpen => instance != null && instance.isOpen;
     public static bool JustClosed => instance != null && instance.closedFrame == Time.frameCount;
 
+    /// <summary>Closes the conversation right now (e.g. when the player dies).</summary>
+    public static void ForceClose()
+    {
+        if (instance != null && instance.isOpen) instance.Close();
+    }
+
     public float charsPerSecond = 45f; // typewriter speed
 
     private enum Mode { Sign, Conversation }

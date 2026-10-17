@@ -161,7 +161,7 @@ public class PlayerCombat : MonoBehaviour
     private void Update()
     {
         // --- Inventory open: the game is paused, so no items can be used ---
-        if (InventoryMenu.IsOpen || ShopMenu.IsOpen)
+        if (InventoryMenu.IsOpen || ShopMenu.IsOpen || DeathScreen.IsOpen || stats.IsDead)
         {
             StopAllActivity();
             return;
@@ -174,7 +174,7 @@ public class PlayerCombat : MonoBehaviour
             return;
         }
         if (DialogueManager.JustClosed) return; // the key press that closed the dialogue must not also use an item
-        if (ShopMenu.JustClosed) return;        // same for the shop screen
+        if (ShopMenu.JustClosed || DeathScreen.JustClosed) return;        // same for the shop screen
 
         // --- Is there something to interact with in range? (only while standing on the ground) ---
         Interactable nearby = controller.IsGrounded && !controller.IsDashing
