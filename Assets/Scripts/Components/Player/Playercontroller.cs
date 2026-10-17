@@ -92,6 +92,39 @@ public class PlayerController : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Called when the player gets hurt: a small hop up, and a shove opposite to the way they were moving.
+    /// If they weren't moving, they're pushed the way the hit was traveling.
+    /// </summary>
+    public void Hurt(Vector2 hitDirection, float horizontalSpeed, float verticalSpeed, float duration)
+    {
+        // The way the player was going
+        float movement;
+        if (isDashing) movement = dashDirection.x;
+        else if (Mathf.Abs(moveInput) > 0.01f) movement = moveInput;
+        else movement = rb.linearVelocity.x;
+
+        float side;
+        if (Mathf.Abs(movement) > 0.4f) side = -Mathf.Sign(movement);              // opposite to their movement
+        else if (Mathf.Abs(hitDirection.x) > 0.01f) side = Mathf.Sign(hitDirection.x); // away from the source
+        else side = facingRight ? -1f : 1f;                                          // backwards
+
+        // Getting hit interrupts a dash and a wall cling
+        if (isDashing)
+        {
+            isDashing = false;
+            dashTimer = 0f;
+            dashCooldownTimer = dashCooldown;
+        }
+        if (isClinging)
+        {
+            isClinging = false;
+            clingLockout = true;
+        }
+
+        ApplyRecoil(new Vector2(side * horizontalSpeed, verticalSpeed), duration);
+    }
+
     /// <summary>Moves the player somewhere instantly and clears dashing, clinging, recoil and speed. Used when respawning.</summary>
     public void TeleportTo(Vector2 position)
     {

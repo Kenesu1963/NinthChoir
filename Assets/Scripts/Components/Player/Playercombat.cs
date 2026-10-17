@@ -134,6 +134,7 @@ public class PlayerCombat : MonoBehaviour
         stats = GetComponent<PlayerStats>();
         if (stats == null) stats = gameObject.AddComponent<PlayerStats>();
         if (GetComponent<PlayerInventory>() == null) gameObject.AddComponent<PlayerInventory>();
+        stats.Damaged += StopAllActivity; // a hit interrupts wind-ups, charging and held items
 
         slots = new Slot[]
         {
@@ -269,6 +270,11 @@ public class PlayerCombat : MonoBehaviour
         }
 
         UpdateSpeedMultiplier();
+    }
+
+    private void OnDestroy()
+    {
+        if (stats != null) stats.Damaged -= StopAllActivity;
     }
 
     private void OnDisable()

@@ -38,19 +38,28 @@ public class Hitbox : MonoBehaviour
     private Vector2 originOffset; // shifts where the box starts (used when crouching)
     private int damage;
     private Action<Vector2> onHit;
+    private float spawnTime;
+    private float parryWindow;
+    private float parrySpeedMultiplier = 1f;
+    private Action onParry;
     private bool notifiedHit;
     private readonly HashSet<IDamageable> alreadyHit = new HashSet<IDamageable>();
 
     /// <param name="onHit">Called once per swing the first time something is hit (used for recoil).</param>
     public static Hitbox Spawn(Kind kind, Transform owner, Vector2 direction, Vector2 size,
                                float distance, float lifetime, int damage, bool showVisual,
-                               Vector2 originOffset = default, Action<Vector2> onHit = null)
+                               Vector2 originOffset = default, Action<Vector2> onHit = null,
+                               float parryWindow = 0f, float parrySpeedMultiplier = 1f, Action onParry = null)
     {
         GameObject go = new GameObject(kind == Kind.Attack ? "AttackHitbox" : "BlockBox");
         Hitbox hb = go.AddComponent<Hitbox>();
         hb.kind = kind;
         hb.owner = owner;
         hb.onHit = onHit;
+        hb.spawnTime = Time.time;
+        hb.parryWindow = parryWindow;
+        hb.parrySpeedMultiplier = parrySpeedMultiplier;
+        hb.onParry = onParry;
         hb.size = size;
         hb.distance = distance;
         hb.originOffset = originOffset;
@@ -131,7 +140,20 @@ public class Hitbox : MonoBehaviour
             else // Block: stops enemy projectiles
             {
                 Projectile p = hit.GetComponent<Projectile>();
-                if (p != null && !p.PlayerOwned) p.Block();
+                if (p != null && !p.PlayerOwned)
+                {
+                    // Raised just as the shot arrives (or with the shot already inside): perfect parry, it flies back.
+                    // Raised earlier: it's just blocked.
+                    if (Time.time - spawnTime <= parryWindow)
+                    {
+                        p.Parry(owner, parrySpeedMultiplier);
+                        if (onParry != null) onParry();
+                    }
+                    else
+                    {
+                        p.Block();
+                    }
+                }
             }
         }
     }

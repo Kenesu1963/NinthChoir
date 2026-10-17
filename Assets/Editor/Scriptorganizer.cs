@@ -21,10 +21,11 @@ public static class ScriptOrganizer
         { "Components/Player",  new[] { "PlayerController", "PlayerCombat", "PlayerStats", "PlayerInventory" } },
         { "Components/Camera",  new[] { "CameraFollow" } },
         { "Components/NPC",     new[] { "NpcDialogue", "Shop" } },
+        { "Components/Enemies", new[] { "WalkerEnemy", "RiflerEnemy", "FlyingImpEnemy" } },
         { "Components/World",   new[] { "Sign", "Chest", "ItemPickup", "SimpleTrade", "TrainingDummy", "DeathZone", "Checkpoint", "RespawnPoint" } },
 
         // Base classes and interfaces that other scripts extend
-        { "Base",               new[] { "ItemData", "WeaponItem", "ToolItem", "IncantationItem", "ConsumableItem", "Interactable", "IDamageable" } },
+        { "Base",               new[] { "ItemData", "WeaponItem", "ToolItem", "IncantationItem", "ConsumableItem", "Interactable", "IDamageable", "EnemyBase" } },
 
         // Derived classes: the actual items
         { "Items/Weapons",      new[] { "MeleeWeaponItem", "SaberItem" } },
@@ -36,7 +37,7 @@ public static class ScriptOrganizer
         { "Systems/UI",         new[] { "InventoryMenu", "ShopMenu", "StatsHUD", "DialogueManager", "DeathScreen" } },
         { "Systems/Respawn",    new[] { "RespawnManager" } },
         { "Systems/Input",      new[] { "GameControls", "InputLock" } },
-        { "Systems/Data",       new[] { "DialogueData", "ItemPages", "TradeUtility" } },
+        { "Systems/Data",       new[] { "DialogueData", "ItemPages", "TradeUtility", "PatrolPath" } },
 
         // Objects the game creates while playing
         { "Spawned/Combat",     new[] { "Hitbox", "Projectile", "LightBeam", "ChargeGlow" } },

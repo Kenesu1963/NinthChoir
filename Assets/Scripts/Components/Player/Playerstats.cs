@@ -24,6 +24,16 @@ public class PlayerStats : MonoBehaviour, IDamageable
     [Header("Money")]
     [SerializeField] private int startingMoney = 5;
 
+    [Header("Taking damage")]
+    [Tooltip("Seconds the player can't be hurt after taking a hit. Stops touching an enemy from hurting every frame.")]
+    [SerializeField] private float invulnerabilitySeconds = 1f;
+    [SerializeField] private bool blinkWhileInvulnerable = true;
+    [Tooltip("Shove opposite to the way the player was moving.")]
+    [SerializeField] private float knockbackHorizontal = 7f;
+    [Tooltip("Small hop upward.")]
+    [SerializeField] private float knockbackVertical = 6f;
+    [SerializeField] private float knockbackDuration = 0.2f;
+
     [Header("Display")]
     [SerializeField] private bool showHUD = true;
 
@@ -43,6 +53,10 @@ public class PlayerStats : MonoBehaviour, IDamageable
     private float strengthMultiplier = 1f;
     private float strengthTimer;
 
+    private float invulnerableTimer;
+    private PlayerController controller;
+    private SpriteRenderer bodySprite;
+
     public string CharacterName => characterName;
     public string CurrencyName => currencyName;
     public int Health => health;
@@ -51,6 +65,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
     public int MaxDivineEnergy => maxDivineEnergy;
     public int Money => money;
     public bool IsDead => health <= 0;
+    public bool IsInvulnerable => invulnerableTimer > 0f;
 
     /// <summary>Multiply any damage you deal by this (1 normally, higher while a strength potion lasts).</summary>
     public float DamageMultiplier => strengthTimer > 0f ? strengthMultiplier : 1f;
@@ -71,11 +86,16 @@ public class PlayerStats : MonoBehaviour, IDamageable
 
     /// <summary>Fired whenever health, DE, money or an effect changes.</summary>
     public event Action Changed;
+
+    /// <summary>Fired when the player takes a hit and survives it.</summary>
+    public event Action Damaged;
     public event Action Died;
 
     private void Awake()
     {
         Instance = this;
+        controller = GetComponent<PlayerController>();
+        bodySprite = GetComponentInChildren<SpriteRenderer>();
         health = maxHealth;
         divineEnergy = maxDivineEnergy;
         money = startingMoney;
@@ -99,12 +119,27 @@ public class PlayerStats : MonoBehaviour, IDamageable
         if (dt <= 0f) return; // paused
 
         UpdateEffects(dt);
+        UpdateInvulnerability(dt);
 
         if (IsDead || divineEnergyRegenPerSecond <= 0f || divineEnergy >= maxDivineEnergy) return;
 
         int before = Mathf.FloorToInt(divineEnergy);
         divineEnergy = Mathf.Min(maxDivineEnergy, divineEnergy + divineEnergyRegenPerSecond * dt);
         if (Mathf.FloorToInt(divineEnergy) != before) Changed?.Invoke();
+    }
+
+    // After a hit the player is briefly untouchable and blinks
+    private void UpdateInvulnerability(float dt)
+    {
+        if (invulnerableTimer <= 0f) return;
+
+        invulnerableTimer -= dt;
+        if (bodySprite != null)
+        {
+            bool visible = invulnerableTimer <= 0f || !blinkWhileInvulnerable ||
+                           Mathf.FloorToInt(invulnerableTimer / 0.08f) % 2 == 0;
+            bodySprite.enabled = visible;
+        }
     }
 
     private void UpdateEffects(float dt)
@@ -139,9 +174,13 @@ public class PlayerStats : MonoBehaviour, IDamageable
 
     // ---------------- Health ----------------
 
+    /// <summary>
+    /// Damage from any source (enemy touch, projectile, trap). Ignored while invulnerable.
+    /// hitDirection is the way the hit was traveling (from the source toward the player).
+    /// </summary>
     public void TakeDamage(int amount, Vector2 hitDirection)
     {
-        if (IsDead || amount <= 0) return;
+        if (IsDead || amount <= 0 || IsInvulnerable) return;
 
         health = Mathf.Max(0, health - amount);
         Changed?.Invoke();
@@ -150,7 +189,15 @@ public class PlayerStats : MonoBehaviour, IDamageable
         {
             Debug.Log(characterName + " has fallen.");
             Died?.Invoke();
+            return;
         }
+
+        invulnerableTimer = invulnerabilitySeconds;
+        if (controller != null)
+        {
+            controller.Hurt(hitDirection, knockbackHorizontal, knockbackVertical, knockbackDuration);
+        }
+        Damaged?.Invoke();
     }
 
     public void Heal(int amount)
@@ -166,6 +213,8 @@ public class PlayerStats : MonoBehaviour, IDamageable
         if (IsDead) return;
 
         health = 0;
+        invulnerableTimer = 0f;
+        if (bodySprite != null) bodySprite.enabled = true;
         regenerations.Clear();
         strengthTimer = 0f;
         Changed?.Invoke();
@@ -179,6 +228,8 @@ public class PlayerStats : MonoBehaviour, IDamageable
     {
         health = maxHealth;
         divineEnergy = maxDivineEnergy;
+        invulnerableTimer = 0f;
+        if (bodySprite != null) bodySprite.enabled = true;
         regenerations.Clear();
         strengthTimer = 0f;
         Changed?.Invoke();
