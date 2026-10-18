@@ -162,7 +162,7 @@ public class PlayerCombat : MonoBehaviour
     private void Update()
     {
         // --- Inventory open: the game is paused, so no items can be used ---
-        if (InventoryMenu.IsOpen || ShopMenu.IsOpen || DeathScreen.IsOpen || stats.IsDead)
+        if (InputLock.IsLocked) // any menu, dialogue, death, camera trip or scene change
         {
             StopAllActivity();
             return;

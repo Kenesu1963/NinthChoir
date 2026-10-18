@@ -209,7 +209,7 @@ public class FlyingImpEnemy : EnemyBase
 
     // ---------------- Scene view ----------------
 
-    private void OnDrawGizmosSelected()
+    protected virtual void OnDrawGizmosSelected()
     {
         Vector2 start = transform.position;
         Vector2 a = pointA != null ? (Vector2)pointA.position : start + Vector2.left * patrolDistance;

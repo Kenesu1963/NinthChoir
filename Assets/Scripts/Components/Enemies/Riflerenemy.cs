@@ -54,7 +54,7 @@ public class RiflerEnemy : EnemyBase
         FaceDirection(toPlayer.x);
 
         bool canShoot = (detectionRange <= 0f || toPlayer.magnitude <= detectionRange)
-                        && (!needsLineOfSight || CanSee(playerPosition));
+                        && (!needsLineOfSight || EnemyShooting.CanSee(transform, rb.position, playerPosition));
 
         timer -= dt;
         if (timer > 0f) return;
@@ -65,39 +65,9 @@ public class RiflerEnemy : EnemyBase
             return;
         }
 
-        Fire(toPlayer);
+        EnemyShooting.FireFan(transform, rb.position, toPlayer, projectilesPerVolley, spreadAngle,
+                              muzzleDistance, projectileSpeed, projectileLifetime, projectileDamage, projectileRadius);
         timer = fireInterval;
-    }
-
-    // A fan of shots centered on the player
-    private void Fire(Vector2 toPlayer)
-    {
-        float baseAngle = Mathf.Atan2(toPlayer.y, toPlayer.x) * Mathf.Rad2Deg;
-        int count = Mathf.Max(1, projectilesPerVolley);
-
-        for (int i = 0; i < count; i++)
-        {
-            float angle = (baseAngle + (i - (count - 1) / 2f) * spreadAngle) * Mathf.Deg2Rad;
-            Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-            Vector2 spawn = rb.position + direction * muzzleDistance;
-
-            Projectile.Spawn(transform, spawn, direction, projectileSpeed, projectileLifetime,
-                             projectileDamage, projectileRadius, false, true);
-        }
-    }
-
-    // True if no wall is between this enemy and the target
-    private bool CanSee(Vector2 target)
-    {
-        foreach (RaycastHit2D hit in Physics2D.LinecastAll(rb.position, target))
-        {
-            Collider2D c = hit.collider;
-            if (c == null || c.isTrigger) continue;
-            if (c.transform == transform || c.transform.IsChildOf(transform)) continue;
-            if (c.GetComponentInParent<IDamageable>() != null) continue; // the player or other enemies
-            return false;
-        }
-        return true;
     }
 
     private void OnDrawGizmosSelected()

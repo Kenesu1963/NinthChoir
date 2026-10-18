@@ -18,6 +18,16 @@ public abstract class Interactable : MonoBehaviour
     /// <summary>False = ignored for now (e.g. an opened chest, or loot still in the air).</summary>
     public virtual bool IsAvailable => true;
 
+    /// <summary>
+    /// Is the position close enough to interact? By default: within Interact Radius of this object.
+    /// sqrDistance is used to pick the nearest one when several are in range.
+    /// </summary>
+    public virtual bool IsInRange(Vector2 position, out float sqrDistance)
+    {
+        sqrDistance = ((Vector2)transform.position - position).sqrMagnitude;
+        return sqrDistance <= interactRadius * interactRadius;
+    }
+
     public abstract void Interact();
 
     protected virtual void OnEnable()
@@ -39,8 +49,8 @@ public abstract class Interactable : MonoBehaviour
         foreach (Interactable i in all)
         {
             if (!i.IsAvailable) continue;
-            float sqr = ((Vector2)i.transform.position - position).sqrMagnitude;
-            if (sqr <= i.interactRadius * i.interactRadius && sqr < bestSqr)
+            float sqr;
+            if (i.IsInRange(position, out sqr) && sqr < bestSqr)
             {
                 best = i;
                 bestSqr = sqr;

@@ -29,6 +29,7 @@ public class RespawnManager : MonoBehaviour
     }
 
     private Vector2 defaultSpawn;
+    private bool hasExplicitPoint;
     private Checkpoint current;
 
     public bool HasCheckpoint => current != null;
@@ -56,12 +57,19 @@ public class RespawnManager : MonoBehaviour
         if (chosen != null)
         {
             defaultSpawn = chosen.Position;
+            hasExplicitPoint = true;
         }
         else if (PlayerStats.Instance != null)
         {
             defaultSpawn = PlayerStats.Instance.transform.position;
             Debug.LogWarning("No RespawnPoint in the scene: using the spot where the player starts.");
         }
+    }
+
+    /// <summary>The player just arrived through a scene transition. If the scene has no RespawnPoint, this spot becomes the default respawn.</summary>
+    public void ArrivedAt(Vector2 position)
+    {
+        if (!hasExplicitPoint) defaultSpawn = position;
     }
 
     public void SetCheckpoint(Checkpoint checkpoint)

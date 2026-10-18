@@ -21,8 +21,8 @@ public static class ScriptOrganizer
         { "Components/Player",  new[] { "PlayerController", "PlayerCombat", "PlayerStats", "PlayerInventory" } },
         { "Components/Camera",  new[] { "CameraFollow" } },
         { "Components/NPC",     new[] { "NpcDialogue", "Shop" } },
-        { "Components/Enemies", new[] { "WalkerEnemy", "RiflerEnemy", "FlyingImpEnemy" } },
-        { "Components/World",   new[] { "Sign", "Chest", "ItemPickup", "SimpleTrade", "TrainingDummy", "DeathZone", "Checkpoint", "RespawnPoint" } },
+        { "Components/Enemies", new[] { "WalkerEnemy", "RiflerEnemy", "FlyingImpEnemy", "FlyingRiflerEnemy" } },
+        { "Components/World",   new[] { "Sign", "Chest", "ItemPickup", "SimpleTrade", "TrainingDummy", "DeathZone", "Checkpoint", "RespawnPoint", "Teleporter", "SceneTransition", "EntryPoint", "KeyGate", "KeyPickup" } },
 
         // Base classes and interfaces that other scripts extend
         { "Base",               new[] { "ItemData", "WeaponItem", "ToolItem", "IncantationItem", "ConsumableItem", "Interactable", "IDamageable", "EnemyBase" } },
@@ -34,10 +34,10 @@ public static class ScriptOrganizer
         { "Items/Consumables",  new[] { "FoodItem", "PotionItem", "WineItem" } },
 
         // Systems that create themselves: you never attach these
-        { "Systems/UI",         new[] { "InventoryMenu", "ShopMenu", "StatsHUD", "DialogueManager", "DeathScreen" } },
+        { "Systems/UI",         new[] { "InventoryMenu", "ShopMenu", "StatsHUD", "DialogueManager", "DeathScreen", "ScreenFader" } },
         { "Systems/Respawn",    new[] { "RespawnManager" } },
         { "Systems/Input",      new[] { "GameControls", "InputLock" } },
-        { "Systems/Data",       new[] { "DialogueData", "ItemPages", "TradeUtility", "PatrolPath" } },
+        { "Systems/Data",       new[] { "DialogueData", "ItemPages", "TradeUtility", "PatrolPath", "PlayerCarryOver", "LevelKeys", "EnemyShooting", "TriggerInteract" } },
 
         // Objects the game creates while playing
         { "Spawned/Combat",     new[] { "Hitbox", "Projectile", "LightBeam", "ChargeGlow" } },

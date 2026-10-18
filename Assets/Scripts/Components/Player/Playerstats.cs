@@ -235,6 +235,18 @@ public class PlayerStats : MonoBehaviour, IDamageable
         Changed?.Invoke();
     }
 
+    /// <summary>The exact Divine Energy, with its fraction. Used when carrying the player to another scene.</summary>
+    public float DivineEnergyExact => divineEnergy;
+
+    /// <summary>Sets health, Divine Energy and money directly (used when arriving in a new scene).</summary>
+    public void SetState(int newHealth, float newDivineEnergy, int newMoney)
+    {
+        health = Mathf.Clamp(newHealth, 1, maxHealth);
+        divineEnergy = Mathf.Clamp(newDivineEnergy, 0f, maxDivineEnergy);
+        money = Mathf.Max(0, newMoney);
+        Changed?.Invoke();
+    }
+
     // ---------------- Temporary effects ----------------
 
     /// <summary>Heals "amount" HP every "interval" seconds, "ticks" times. Several can run at once.</summary>

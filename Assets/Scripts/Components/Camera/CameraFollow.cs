@@ -19,6 +19,15 @@ public class CameraFollow : MonoBehaviour
     private Vector2 followVelocity;
     private float currentLookOffset;
     private float lookVelocity;
+
+    // Smooth trip to a new place (after a teleport)
+    private bool travelling;
+    private Vector3 travelFrom;
+    private float travelElapsed;
+    private float travelDuration = 1f;
+
+    /// <summary>True while the camera is gliding to a new place. The player can't act meanwhile.</summary>
+    public static bool IsTraveling { get; private set; }
     private float fallTimer;
     private const float MinFallSpeed = 0.5f; // anything slower than this doesn't count as falling
 
@@ -33,6 +42,25 @@ public class CameraFollow : MonoBehaviour
         }
     }
 
+    /// <summary>Glides from where the camera is now to the player over the given time (used after a teleport).</summary>
+    public void TravelToTarget(float duration)
+    {
+        if (target == null || duration <= 0f)
+        {
+            SnapToTarget();
+            return;
+        }
+
+        travelFrom = transform.position;
+        travelDuration = duration;
+        travelElapsed = 0f;
+        travelling = true;
+        IsTraveling = true;
+        followVelocity = Vector2.zero;
+        currentLookOffset = 0f;
+        lookVelocity = 0f;
+    }
+
     /// <summary>Jumps straight to the player without smoothing (used after respawning).</summary>
     public void SnapToTarget()
     {
@@ -43,12 +71,37 @@ public class CameraFollow : MonoBehaviour
         followVelocity = Vector2.zero;
         currentLookOffset = 0f;
         lookVelocity = 0f;
+        travelling = false;
+        IsTraveling = false;
+    }
+
+    private void OnDestroy()
+    {
+        IsTraveling = false;
     }
 
     private void LateUpdate()
     {
         if (target == null) return;
         if (Time.deltaTime <= 0f) return; // game is paused (inventory open)
+
+        // --- Gliding to a new place ---
+        if (travelling)
+        {
+            travelElapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, travelElapsed / travelDuration);
+            Vector3 goal = target.position + (Vector3)offset;
+            Vector3 position = Vector3.Lerp(travelFrom, goal, t);
+            transform.position = new Vector3(position.x, position.y, transform.position.z);
+
+            if (travelElapsed >= travelDuration)
+            {
+                travelling = false;
+                IsTraveling = false;
+                followVelocity = Vector2.zero;
+            }
+            return;
+        }
 
         // --- Look down while falling ---
         bool fallingNow = targetRb != null && targetRb.linearVelocity.y < -MinFallSpeed; // use .velocity on Unity 2022 or older

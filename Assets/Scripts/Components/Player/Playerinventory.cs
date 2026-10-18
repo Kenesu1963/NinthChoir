@@ -58,6 +58,9 @@ public class PlayerInventory : MonoBehaviour
         }
 
         if (enableMenu) InventoryMenu.Create(this);
+
+        // Coming from another scene? Receive the carried health, items and equipment, and move to the entry point.
+        PlayerCarryOver.ApplyToNewScene(GetComponent<PlayerStats>(), this, combat);
     }
 
     // ---------------- Reading ----------------
@@ -71,6 +74,33 @@ public class PlayerInventory : MonoBehaviour
     {
         int count;
         return item != null && counts.TryGetValue(item, out count) ? count : 0;
+    }
+
+    /// <summary>Everything owned, as a list (used when carrying the player to another scene).</summary>
+    public List<ItemStack> Snapshot()
+    {
+        List<ItemStack> result = new List<ItemStack>();
+        foreach (List<ItemData> page in pages)
+        {
+            foreach (ItemData item in page) result.Add(new ItemStack(item, GetCount(item)));
+        }
+        return result;
+    }
+
+    /// <summary>Replaces everything owned with the given items.</summary>
+    public void Load(List<ItemStack> stacks)
+    {
+        foreach (List<ItemData> page in pages) page.Clear();
+        counts.Clear();
+
+        if (stacks != null)
+        {
+            foreach (ItemStack stack in stacks)
+            {
+                if (stack != null && stack.item != null) Add(stack.item, stack.amount);
+            }
+        }
+        Changed?.Invoke();
     }
 
     public bool Has(ItemData item)
