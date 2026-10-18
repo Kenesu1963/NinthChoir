@@ -19,8 +19,17 @@ public class WalkerEnemy : EnemyBase
     protected override void Awake()
     {
         base.Awake();
+        BuildPath();
+    }
 
-        Vector2 start = transform.position;
+    protected override void OnRespawn()
+    {
+        BuildPath(); // starts the patrol over
+    }
+
+    private void BuildPath()
+    {
+        Vector2 start = StartPosition;
         Vector2 a = pointA != null ? (Vector2)pointA.position : start + Vector2.left * patrolDistance;
         Vector2 b = pointB != null ? (Vector2)pointB.position : start + Vector2.right * patrolDistance;
         path = new PatrolPath(a, b);

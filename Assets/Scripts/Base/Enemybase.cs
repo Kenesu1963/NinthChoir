@@ -1,8 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Base class for every enemy: health, contact damage, hit flash, a short freeze when hit, and death.
-/// Make a new kind of enemy by extending this class and filling in Tick (see WalkerEnemy).
+/// Base class for every enemy: health, contact damage, hit flash, a short freeze when hit, death,
+/// and optional respawning. Make a new kind of enemy by extending this class and filling in Tick
+/// (see WalkerEnemy). If your enemy has its own state, reset it in OnRespawn.
 ///
 /// Setup for any enemy: a sprite, a SOLID Box/Capsule Collider 2D (not a trigger, or the player's
 /// projectiles will fly through it), and one enemy script. The Rigidbody 2D is added automatically.
@@ -19,18 +20,35 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     [Tooltip("Aureus coins that jump out when it dies.")]
     [SerializeField] protected int coinsOnDeath = 0;
 
+    [Header("Respawn")]
+    [Tooltip("If ticked, the enemy comes back after it dies (with full health, at the spot where it started).")]
+    [SerializeField] protected bool respawnable = false;
+    [Tooltip("Seconds after dying before it comes back.")]
+    [SerializeField] protected float respawnTime = 30f;
+    [Tooltip("It waits to come back while the player is closer than this to its starting spot, so it never appears on top of you. 0 = comes back regardless.")]
+    [SerializeField] protected float respawnPlayerDistance = 3f;
+
     protected Rigidbody2D rb;
     protected int health;
 
     private SpriteRenderer sprite;
+    private SpriteRenderer[] renderers;
+    private Collider2D[] colliders;
     private Color originalColor = Color.white;
     private float stunTimer;
     private float flashTimer;
+
+    private Vector3 startPosition;
+    private Vector3 startScale;
+    private float respawnTimer;
 
     public int Health => health;
     public int MaxHealth => maxHealth;
     public int ContactDamage => contactDamage;
     public bool IsDead => health <= 0;
+
+    /// <summary>Where the enemy started in the scene (and where it comes back to).</summary>
+    protected Vector3 StartPosition => startPosition;
 
     /// <summary>The color the placeholder sprite gets when you add the script. Real art isn't touched.</summary>
     protected virtual Color PlaceholderColor => Color.white;
@@ -44,6 +62,8 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected virtual void Awake()
     {
         health = maxHealth;
+        startPosition = transform.position;
+        startScale = transform.localScale;
 
         // Enemies are moved by their scripts, not by gravity
         rb = GetComponent<Rigidbody2D>();
@@ -54,10 +74,19 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
         sprite = GetComponentInChildren<SpriteRenderer>();
         if (sprite != null) originalColor = sprite.color;
+
+        renderers = GetComponentsInChildren<SpriteRenderer>();
+        colliders = GetComponentsInChildren<Collider2D>();
     }
 
     protected virtual void Update()
     {
+        if (IsDead)
+        {
+            if (respawnable) UpdateRespawn();
+            return;
+        }
+
         if (sprite == null) return;
 
         sprite.color = flashTimer > 0f ? new Color(1f, 0.3f, 0.3f, originalColor.a) : originalColor;
@@ -80,6 +109,9 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     /// <summary>The enemy's behavior: move, shoot... Called every physics step while it's alive and not frozen.</summary>
     protected abstract void Tick(float dt);
 
+    /// <summary>Called when the enemy comes back to life. Reset your own state here (patrol, timers...).</summary>
+    protected virtual void OnRespawn() { }
+
     // ---------------- Taking damage ----------------
 
     public virtual void TakeDamage(int amount, Vector2 hitDirection)
@@ -100,7 +132,59 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
             Vector2 launch = new Vector2(Random.Range(-3f, 3f), Random.Range(5f, 8f));
             CoinPickup.Spawn(transform.position, 1, launch, transform);
         }
-        Destroy(gameObject);
+
+        if (respawnable)
+        {
+            // Not destroyed: it just disappears for a while
+            respawnTimer = respawnTime;
+            SetPresent(false);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    // ---------------- Respawning ----------------
+
+    private void UpdateRespawn()
+    {
+        respawnTimer -= Time.deltaTime;
+        if (respawnTimer > 0f) return;
+
+        // Don't pop up right next to the player. Keep waiting until they've moved away.
+        PlayerStats player = PlayerStats.Instance;
+        if (respawnPlayerDistance > 0f && player != null && !player.IsDead &&
+            Vector2.Distance(player.transform.position, startPosition) < respawnPlayerDistance)
+        {
+            return;
+        }
+
+        Respawn();
+    }
+
+    private void Respawn()
+    {
+        health = maxHealth;
+        stunTimer = 0f;
+        flashTimer = 0f;
+
+        transform.position = startPosition;
+        transform.localScale = startScale; // undoes any left/right flipping
+        rb.position = startPosition;
+
+        SetPresent(true);
+        if (sprite != null) sprite.color = originalColor;
+
+        OnRespawn();
+    }
+
+    // Shows or hides the enemy and turns its collisions on or off
+    private void SetPresent(bool present)
+    {
+        foreach (SpriteRenderer r in renderers) r.enabled = present;
+        foreach (Collider2D c in colliders) c.enabled = present;
+        rb.simulated = present;
     }
 
     // ---------------- Contact damage ----------------

@@ -39,6 +39,11 @@ public class RiflerEnemy : EnemyBase
         timer = firstShotDelay;
     }
 
+    protected override void OnRespawn()
+    {
+        timer = firstShotDelay;
+    }
+
     protected override void Tick(float dt)
     {
         PlayerStats player = PlayerStats.Instance;

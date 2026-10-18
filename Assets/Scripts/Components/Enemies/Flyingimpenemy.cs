@@ -73,6 +73,17 @@ public class FlyingImpEnemy : EnemyBase
         else target = RandomPointInCircle();
     }
 
+    protected override void OnRespawn()
+    {
+        state = ImpState.Patrol;
+        alertTimer = 0f;
+        waitTimer = 0f;
+        basePosition = StartPosition;
+
+        if (movement == ImpMovement.BetweenTwoPoints) path = new PatrolPath(pathA, pathB);
+        else target = RandomPointInCircle();
+    }
+
     protected override void Tick(float dt)
     {
         PlayerStats player = PlayerStats.Instance;
