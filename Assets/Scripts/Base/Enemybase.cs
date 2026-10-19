@@ -28,6 +28,12 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     [Tooltip("It waits to come back while the player is closer than this to its starting spot, so it never appears on top of you. 0 = comes back regardless.")]
     [SerializeField] protected float respawnPlayerDistance = 3f;
 
+    [Header("Water")]
+    [Tooltip("Tick to make this enemy ignore water: it moves at full speed through it.")]
+    [SerializeField] protected bool notAffectedByWater = false;
+    [Tooltip("Movement speed in water compared to normal (0.5 = half speed). Only used when Not Affected By Water is off.")]
+    [Range(0.05f, 1f)] [SerializeField] protected float waterSpeedMultiplier = 0.5f;
+
     protected Rigidbody2D rb;
     protected int health;
 
@@ -49,6 +55,9 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
     /// <summary>Where the enemy started in the scene (and where it comes back to).</summary>
     protected Vector3 StartPosition => startPosition;
+
+    /// <summary>1 normally, lower while the enemy is moving through water. Multiply your movement speeds by this.</summary>
+    protected float MoveSpeedFactor { get; private set; } = 1f;
 
     /// <summary>The color the placeholder sprite gets when you add the script. Real art isn't touched.</summary>
     protected virtual Color PlaceholderColor => Color.white;
@@ -102,6 +111,9 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
             stunTimer -= Time.fixedDeltaTime;
             return;
         }
+
+        // Moving through water is slower, unless this enemy ignores water
+        MoveSpeedFactor = !notAffectedByWater && WaterZone.Find(rb.position) != null ? waterSpeedMultiplier : 1f;
 
         Tick(Time.fixedDeltaTime);
     }

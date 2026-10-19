@@ -49,6 +49,8 @@ public abstract class ItemData : ScriptableObject
     public int divineEnergyCost = 0;
     [Tooltip("Seconds before the item can be used again, counted from the moment the button is pressed.")]
     public float cooldown = 0.25f;
+    [Tooltip("If unticked, the item can't be used while the player is swimming.")]
+    public bool usableUnderwater = true;
 
     /// <summary>True = active while the button is held (shield, pick, charged spells). False = fires once per press.</summary>
     public abstract bool IsHold { get; }
@@ -76,7 +78,8 @@ public abstract class ItemData : ScriptableObject
     {
         return "Category: " + category +
                "\nDivine Energy cost: " + (divineEnergyCost > 0 ? divineEnergyCost.ToString() : "none") +
-               "\nCooldown: " + Num(cooldown) + "s";
+               "\nCooldown: " + Num(cooldown) + "s" +
+               (usableUnderwater ? "" : "\nCannot be used underwater");
     }
 
     protected static string Num(float value)

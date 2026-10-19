@@ -103,12 +103,12 @@ public class FlyingImpEnemy : EnemyBase
             case ImpState.Chase:
                 Vector2 playerPosition = player.transform.position;
                 direction = playerPosition - basePosition;
-                basePosition = Vector2.MoveTowards(basePosition, playerPosition, chaseSpeed * dt);
+                basePosition = Vector2.MoveTowards(basePosition, playerPosition, chaseSpeed * MoveSpeedFactor * dt);
                 break;
 
             default:
                 basePosition = movement == ImpMovement.BetweenTwoPoints
-                    ? path.Step(basePosition, speed, dt, waitAtTargets, out direction)
+                    ? path.Step(basePosition, speed * MoveSpeedFactor, dt, waitAtTargets, out direction)
                     : StepAroundCenter(dt, out direction);
                 break;
         }
@@ -187,7 +187,7 @@ public class FlyingImpEnemy : EnemyBase
 
         Vector2 toTarget = target - basePosition;
         float distance = toTarget.magnitude;
-        float step = speed * dt;
+        float step = speed * MoveSpeedFactor * dt;
 
         if (distance <= step)
         {

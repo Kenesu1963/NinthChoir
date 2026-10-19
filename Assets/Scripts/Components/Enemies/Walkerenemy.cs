@@ -38,7 +38,7 @@ public class WalkerEnemy : EnemyBase
     protected override void Tick(float dt)
     {
         Vector2 direction;
-        Vector2 next = path.Step(rb.position, speed, dt, waitAtEnds, out direction);
+        Vector2 next = path.Step(rb.position, speed * MoveSpeedFactor, dt, waitAtEnds, out direction);
         rb.MovePosition(next);
         FaceDirection(direction.x);
     }

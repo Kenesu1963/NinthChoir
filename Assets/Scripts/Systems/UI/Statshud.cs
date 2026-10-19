@@ -74,12 +74,21 @@ public class StatsHUD : MonoBehaviour
 
         string status = stats.StatusText;
         if (!string.IsNullOrEmpty(status)) info += "\n<size=17><color=#9AD18B>" + status + "</color></size>";
+        if (stats.ShowAirMeter) info += "\n<size=18>Air  " + AirBar() + "</size>";
         infoText.text = info;
 
         loadoutText.text =
             SlotLine(GameAction.Action1) + "\n" +
             SlotLine(GameAction.Action2) + "\n" +
             SlotLine(GameAction.Action3);
+    }
+
+    // Ten little bars that empty as the air runs out
+    private string AirBar()
+    {
+        const int segments = 10;
+        int filled = Mathf.Clamp(Mathf.CeilToInt(stats.Breath / Mathf.Max(0.01f, stats.MaxBreath) * segments), 0, segments);
+        return "<color=#6EC8FF>" + new string('|', filled) + "</color><color=#35505E>" + new string('|', segments - filled) + "</color>";
     }
 
     private string SlotLine(GameAction action)
@@ -113,7 +122,7 @@ public class StatsHUD : MonoBehaviour
         panelRect.anchorMin = new Vector2(0f, 1f);
         panelRect.anchorMax = new Vector2(0f, 1f);
         panelRect.pivot = new Vector2(0f, 1f);
-        panelRect.sizeDelta = new Vector2(320f, 240f);
+        panelRect.sizeDelta = new Vector2(320f, 262f);
         panelRect.anchoredPosition = new Vector2(16f, -48f);
         Image bg = panel.AddComponent<Image>();
         bg.color = new Color(0f, 0f, 0f, 0.45f);
@@ -121,7 +130,7 @@ public class StatsHUD : MonoBehaviour
 
         infoText = MakeText("Info", panelRect, 24);
         Stretch(infoText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
-                new Vector2(14f, -158f), new Vector2(-14f, -8f));
+                new Vector2(14f, -180f), new Vector2(-14f, -8f));
 
         loadoutText = MakeText("Loadout", panelRect, 20);
         Stretch(loadoutText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
@@ -134,7 +143,7 @@ public class StatsHUD : MonoBehaviour
         messageRect.anchorMax = new Vector2(0f, 1f);
         messageRect.pivot = new Vector2(0f, 1f);
         messageRect.sizeDelta = new Vector2(700f, 30f);
-        messageRect.anchoredPosition = new Vector2(16f, -296f);
+        messageRect.anchoredPosition = new Vector2(16f, -318f);
         Outline messageOutline = messageText.gameObject.AddComponent<Outline>();
         messageOutline.effectColor = new Color(0f, 0f, 0f, 0.9f);
         messageOutline.effectDistance = new Vector2(2f, -2f);

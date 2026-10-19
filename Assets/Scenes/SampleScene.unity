@@ -1934,6 +1934,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   fireInterval: 2
   firstShotDelay: 1
   projectilesPerVolley: 1
@@ -2001,6 +2003,8 @@ MonoBehaviour:
   respawnable: 1
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   movement: 1
   speed: 6
   waitAtTargets: 0.7
@@ -3980,6 +3984,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SceneTransition
   targetScene: newSecondScene
   targetEntryId: Start
+  activateWithInteract: 1
+  interactPrompt: Enter
   fadeOutTime: 0.4
   fadeInTime: 0.4
 --- !u!61 &476769262
@@ -4380,7 +4386,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 0.15, b: 0.15, a: 0.4}
+  m_Color: {r: 1, g: 0.15, b: 0.15, a: 0}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -5529,6 +5535,8 @@ MonoBehaviour:
   respawnable: 1
   respawnTime: 10
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   pointA: {fileID: 1787486577}
   pointB: {fileID: 874895068}
   patrolDistance: 3
@@ -5712,6 +5720,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   fireInterval: 2
   firstShotDelay: 1
   projectilesPerVolley: 1
@@ -5779,6 +5789,8 @@ MonoBehaviour:
   respawnable: 1
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   movement: 1
   speed: 6
   waitAtTargets: 0.7
@@ -6019,6 +6031,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Teleporter
   destination: {fileID: 738089446}
   offset: {x: 0, y: 0}
+  activateWithInteract: 0
+  interactPrompt: Enter
   mode: 1
   cameraTravelTime: 1
   blockSeconds: 0.75
@@ -6899,6 +6913,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   fireInterval: 2
   firstShotDelay: 1
   projectilesPerVolley: 1
@@ -6966,6 +6982,8 @@ MonoBehaviour:
   respawnable: 1
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   movement: 1
   speed: 6
   waitAtTargets: 0.7
@@ -7742,6 +7760,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Teleporter
   destination: {fileID: 2001831780}
   offset: {x: 0, y: 0}
+  activateWithInteract: 0
+  interactPrompt: Enter
   mode: 0
   cameraTravelTime: 1
   blockSeconds: 0.75
@@ -8386,6 +8406,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   movement: 0
   speed: 6
   waitAtTargets: 0.7
@@ -8818,6 +8840,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   fireInterval: 2
   firstShotDelay: 1
   projectilesPerVolley: 1
@@ -8885,6 +8909,8 @@ MonoBehaviour:
   respawnable: 1
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   movement: 1
   speed: 6
   waitAtTargets: 0.7
@@ -9974,6 +10000,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   movement: 1
   speed: 6
   waitAtTargets: 0.7
@@ -10539,6 +10567,8 @@ MonoBehaviour:
   respawnable: 1
   respawnTime: 5
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   pointA: {fileID: 0}
   pointB: {fileID: 0}
   patrolDistance: 35
@@ -11095,6 +11125,8 @@ MonoBehaviour:
   respawnable: 1
   respawnTime: 10
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   pointA: {fileID: 0}
   pointB: {fileID: 0}
   patrolDistance: 3
@@ -11278,6 +11310,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   fireInterval: 2
   firstShotDelay: 1
   projectilesPerVolley: 1
@@ -11345,6 +11379,8 @@ MonoBehaviour:
   respawnable: 1
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   movement: 1
   speed: 6
   waitAtTargets: 0.7
@@ -11500,6 +11536,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   fireInterval: 2
   firstShotDelay: 3
   projectilesPerVolley: 3
@@ -11866,6 +11904,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Teleporter
   destination: {fileID: 770202381}
   offset: {x: 0, y: 0}
+  activateWithInteract: 0
+  interactPrompt: Enter
   mode: 1
   cameraTravelTime: 1
   blockSeconds: 0.75
@@ -13419,6 +13459,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   fireInterval: 0.1
   firstShotDelay: 2
   projectilesPerVolley: 30
@@ -14087,6 +14129,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Teleporter
   destination: {fileID: 1023085134}
   offset: {x: 0, y: 0}
+  activateWithInteract: 0
+  interactPrompt: Enter
   mode: 0
   cameraTravelTime: 1
   blockSeconds: 0.75
@@ -14819,6 +14863,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   fireInterval: 2
   firstShotDelay: 1
   projectilesPerVolley: 1
@@ -14886,6 +14932,8 @@ MonoBehaviour:
   respawnable: 1
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   movement: 1
   speed: 6
   waitAtTargets: 0.7
@@ -15318,6 +15366,8 @@ MonoBehaviour:
   respawnable: 0
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   fireInterval: 2
   firstShotDelay: 1
   projectilesPerVolley: 1
@@ -15385,6 +15435,8 @@ MonoBehaviour:
   respawnable: 1
   respawnTime: 30
   respawnPlayerDistance: 3
+  notAffectedByWater: 0
+  waterSpeedMultiplier: 0.5
   movement: 1
   speed: 6
   waitAtTargets: 0.7
@@ -15561,11 +15613,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2348806853400548770, guid: 3b1bc84161071ffadbd940b8a2795033, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 24.2
+      value: -3.45
       objectReference: {fileID: 0}
     - target: {fileID: 2348806853400548770, guid: 3b1bc84161071ffadbd940b8a2795033, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -39.92
+      value: -1.6
       objectReference: {fileID: 0}
     - target: {fileID: 2348806853400548770, guid: 3b1bc84161071ffadbd940b8a2795033, type: 3}
       propertyPath: m_LocalPosition.z

@@ -22,7 +22,7 @@ public static class ScriptOrganizer
         { "Components/Camera",  new[] { "CameraFollow" } },
         { "Components/NPC",     new[] { "NpcDialogue", "Shop" } },
         { "Components/Enemies", new[] { "WalkerEnemy", "RiflerEnemy", "FlyingImpEnemy", "FlyingRiflerEnemy" } },
-        { "Components/World",   new[] { "Sign", "Chest", "ItemPickup", "SimpleTrade", "TrainingDummy", "DeathZone", "Checkpoint", "RespawnPoint", "Teleporter", "SceneTransition", "EntryPoint", "KeyGate", "KeyPickup" } },
+        { "Components/World",   new[] { "Sign", "Chest", "ItemPickup", "SimpleTrade", "TrainingDummy", "DeathZone", "Checkpoint", "RespawnPoint", "Teleporter", "SceneTransition", "EntryPoint", "KeyGate", "KeyPickup", "WaterZone", "BubbleGenerator" } },
 
         // Base classes and interfaces that other scripts extend
         { "Base",               new[] { "ItemData", "WeaponItem", "ToolItem", "IncantationItem", "ConsumableItem", "Interactable", "IDamageable", "EnemyBase" } },
@@ -42,6 +42,7 @@ public static class ScriptOrganizer
         // Objects the game creates while playing
         { "Spawned/Combat",     new[] { "Hitbox", "Projectile", "LightBeam", "ChargeGlow" } },
         { "Spawned/Loot",       new[] { "LootBody", "CoinPickup" } },
+        { "Spawned/Water",      new[] { "Bubble" } },
     };
 
     [MenuItem("Items/Organize Scripts")]

@@ -24,6 +24,19 @@ public class PlayerStats : MonoBehaviour, IDamageable
     [Header("Money")]
     [SerializeField] private int startingMoney = 5;
 
+    [Header("Breathing (under water)")]
+    [Tooltip("Seconds the player can stay under water.")]
+    [SerializeField] private float maxBreathSeconds = 10f;
+    [Tooltip("How fast the air comes back once the player can breathe.")]
+    [SerializeField] private float breathRefillPerSecond = 8f;
+    [Tooltip("Damage taken each time the player is drowning (no air left).")]
+    [SerializeField] private int drownDamage = 1;
+    [SerializeField] private float drownIntervalSeconds = 1.5f;
+
+    [Header("Paralysis (bubbles)")]
+    [Tooltip("After being paralyzed, bubbles can't paralyze the player again for this long (they still restore air).")]
+    [SerializeField] private float paralysisImmunitySeconds = 0.75f;
+
     [Header("Taking damage")]
     [Tooltip("Seconds the player can't be hurt after taking a hit. Stops touching an enemy from hurting every frame.")]
     [SerializeField] private float invulnerabilitySeconds = 1f;
@@ -57,6 +70,14 @@ public class PlayerStats : MonoBehaviour, IDamageable
     private PlayerController controller;
     private SpriteRenderer bodySprite;
 
+    private float breath;
+    private bool canBreathe = true;
+    private float drownTimer;
+
+    private float paralyzeTimer;
+    private float paralysisImmuneTimer;
+    private Color bodyOriginalColor = Color.white;
+
     public string CharacterName => characterName;
     public string CurrencyName => currencyName;
     public int Health => health;
@@ -66,6 +87,12 @@ public class PlayerStats : MonoBehaviour, IDamageable
     public int Money => money;
     public bool IsDead => health <= 0;
     public bool IsInvulnerable => invulnerableTimer > 0f;
+    public bool IsParalyzed => paralyzeTimer > 0f;
+
+    public float Breath => breath;
+    public float MaxBreath => maxBreathSeconds;
+    /// <summary>True when the air is not full (the HUD only shows the air meter then).</summary>
+    public bool ShowAirMeter => breath < maxBreathSeconds - 0.01f;
 
     /// <summary>Multiply any damage you deal by this (1 normally, higher while a strength potion lasts).</summary>
     public float DamageMultiplier => strengthTimer > 0f ? strengthMultiplier : 1f;
@@ -78,6 +105,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
             string text = "";
             if (regenerations.Count > 0) text += "Regeneration";
             if (strengthTimer > 0f) text += (text.Length > 0 ? "   " : "") + "Strength x" + strengthMultiplier.ToString("0.#");
+            if (paralyzeTimer > 0f) text += (text.Length > 0 ? "   " : "") + "Paralyzed";
             return text;
         }
     }
@@ -96,9 +124,11 @@ public class PlayerStats : MonoBehaviour, IDamageable
         Instance = this;
         controller = GetComponent<PlayerController>();
         bodySprite = GetComponentInChildren<SpriteRenderer>();
+        if (bodySprite != null) bodyOriginalColor = bodySprite.color;
         health = maxHealth;
         divineEnergy = maxDivineEnergy;
         money = startingMoney;
+        breath = maxBreathSeconds;
     }
 
     private void OnDestroy()
@@ -120,12 +150,94 @@ public class PlayerStats : MonoBehaviour, IDamageable
 
         UpdateEffects(dt);
         UpdateInvulnerability(dt);
+        UpdateBreath(dt);
+        UpdateParalysis(dt);
 
         if (IsDead || divineEnergyRegenPerSecond <= 0f || divineEnergy >= maxDivineEnergy) return;
 
         int before = Mathf.FloorToInt(divineEnergy);
         divineEnergy = Mathf.Min(maxDivineEnergy, divineEnergy + divineEnergyRegenPerSecond * dt);
         if (Mathf.FloorToInt(divineEnergy) != before) Changed?.Invoke();
+    }
+
+    /// <summary>Fills the air meter completely (a bubble was touched).</summary>
+    public void RefillBreath()
+    {
+        breath = maxBreathSeconds;
+        drownTimer = 0f;
+        Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Freezes the player for a moment: no moving, no items. Returns false if they're already paralyzed
+    /// or only just recovered (so a stream of bubbles can't lock the player in place).
+    /// </summary>
+    public bool Paralyze(float seconds)
+    {
+        if (IsDead || seconds <= 0f || paralyzeTimer > 0f || paralysisImmuneTimer > 0f) return false;
+
+        paralyzeTimer = seconds;
+        if (bodySprite != null) bodySprite.color = Color.Lerp(bodyOriginalColor, new Color(0.5f, 0.9f, 1f, bodyOriginalColor.a), 0.6f);
+        if (controller != null) controller.Paralyze();
+        Changed?.Invoke();
+        return true;
+    }
+
+    private void UpdateParalysis(float dt)
+    {
+        if (paralysisImmuneTimer > 0f) paralysisImmuneTimer -= dt;
+        if (paralyzeTimer <= 0f) return;
+
+        paralyzeTimer -= dt;
+        if (paralyzeTimer > 0f) return;
+
+        // Paralysis is over
+        paralysisImmuneTimer = paralysisImmunitySeconds;
+        if (bodySprite != null) bodySprite.color = bodyOriginalColor;
+        Changed?.Invoke();
+    }
+
+    private void ClearParalysis()
+    {
+        paralyzeTimer = 0f;
+        paralysisImmuneTimer = 0f;
+        if (bodySprite != null) bodySprite.color = bodyOriginalColor;
+    }
+
+    /// <summary>Called by the player controller every frame: false while the head is under water.</summary>
+    public void SetCanBreathe(bool value)
+    {
+        canBreathe = value;
+    }
+
+    // Air runs out under water. With no air left, the player takes drowning damage.
+    private void UpdateBreath(float dt)
+    {
+        if (IsDead) return;
+
+        float before = breath;
+
+        if (canBreathe)
+        {
+            breath = Mathf.Min(maxBreathSeconds, breath + breathRefillPerSecond * dt);
+            drownTimer = 0f;
+        }
+        else
+        {
+            breath = Mathf.Max(0f, breath - dt);
+            if (breath <= 0f)
+            {
+                drownTimer -= dt;
+                if (drownTimer <= 0f)
+                {
+                    drownTimer = drownIntervalSeconds;
+                    TakeEnvironmentalDamage(drownDamage);
+                }
+            }
+        }
+
+        // Tell the HUD about once per whole second
+        if (Mathf.CeilToInt(breath) != Mathf.CeilToInt(before)) Changed?.Invoke();
     }
 
     // After a hit the player is briefly untouchable and blinks
@@ -200,6 +312,21 @@ public class PlayerStats : MonoBehaviour, IDamageable
         Damaged?.Invoke();
     }
 
+    /// <summary>Damage that ignores invulnerability and doesn't push the player (drowning, poison...).</summary>
+    public void TakeEnvironmentalDamage(int amount)
+    {
+        if (IsDead || amount <= 0) return;
+
+        health = Mathf.Max(0, health - amount);
+        Changed?.Invoke();
+
+        if (IsDead)
+        {
+            Debug.Log(characterName + " has fallen.");
+            Died?.Invoke();
+        }
+    }
+
     public void Heal(int amount)
     {
         if (IsDead || amount <= 0) return;
@@ -213,6 +340,7 @@ public class PlayerStats : MonoBehaviour, IDamageable
         if (IsDead) return;
 
         health = 0;
+        ClearParalysis();
         invulnerableTimer = 0f;
         if (bodySprite != null) bodySprite.enabled = true;
         regenerations.Clear();
@@ -228,6 +356,9 @@ public class PlayerStats : MonoBehaviour, IDamageable
     {
         health = maxHealth;
         divineEnergy = maxDivineEnergy;
+        breath = maxBreathSeconds;
+        drownTimer = 0f;
+        ClearParalysis();
         invulnerableTimer = 0f;
         if (bodySprite != null) bodySprite.enabled = true;
         regenerations.Clear();

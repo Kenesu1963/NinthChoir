@@ -216,6 +216,14 @@ public class PlayerCombat : MonoBehaviour
             bool pressed = GameControls.Pressed(slot.action);
             bool held = GameControls.Held(slot.action);
 
+            // Under water, items that aren't marked "usable underwater" can't be used
+            if (controller.IsSwimming && !slot.item.usableUnderwater)
+            {
+                if (slot.winding || slot.holding) StopActivity(slot);
+                if (pressed) StatsHUD.Show(slot.item.itemName + " can't be used underwater.");
+                continue;
+            }
+
             // Wind-up in progress: count down, then the item takes effect
             if (slot.winding)
             {

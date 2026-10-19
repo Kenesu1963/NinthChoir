@@ -28,6 +28,24 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float crouchHeightMultiplier = 0.75f; // hitbox is 3/4 of its normal height
     [SerializeField] private float crouchSpeedMultiplier = 0.5f;   // walking speed while crouched
 
+    [Header("Swimming")]
+    [Tooltip("Top swimming speed, in any direction.")]
+    [SerializeField] private float swimSpeed = 5f;
+    [Tooltip("How quickly you speed up in water. Low = you start moving slowly.")]
+    [SerializeField] private float swimAcceleration = 10f;
+    [Tooltip("How quickly you slow down when you stop. Low = you glide further. Around 8 gives a short glide (momentum, not ice).")]
+    [SerializeField] private float swimDeceleration = 8f;
+    [Tooltip("How fast the water slows you if you dive in faster than swim speed.")]
+    [SerializeField] private float waterEntryDrag = 30f;
+    [Tooltip("Dash speed in water compared to normal. Below 1 = slower.")]
+    [SerializeField] private float waterDashSpeedMultiplier = 0.55f;
+    [Tooltip("The upward speed of the jump out of the water (press Jump near the surface).")]
+    [SerializeField] private float surfaceJumpSpeed = 14f;
+    [Tooltip("How far below the surface you can still jump out.")]
+    [SerializeField] private float surfaceJumpDepth = 1f;
+    [Tooltip("Off: you only get air back by leaving the water. On: you can also breathe while your head is above the surface.")]
+    [SerializeField] private bool breatheAtSurface = false;
+
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.2f;
@@ -74,9 +92,16 @@ public class PlayerController : MonoBehaviour
 
     // --- Clinging to a wall (used by the Pick tool) ---
     private bool isClinging;
+
+    // Swimming
+    private bool isSwimming;
+    private WaterZone currentWater;
+    private bool waterAboveSurface;
+    private float surfaceJumpTimer;
     private bool clingLockout; // after jumping off, you must let go of the button and press it again
 
     public bool IsClinging => isClinging;
+    public bool IsSwimming => isSwimming;
     public Bounds BodyBounds => bodyCollider != null ? bodyCollider.bounds : new Bounds(transform.position, Vector3.one);
 
     /// <summary>Sticks the player to a wall. wallSide: -1 = wall on the left, +1 = wall on the right.</summary>
@@ -123,6 +148,18 @@ public class PlayerController : MonoBehaviour
         }
 
         ApplyRecoil(new Vector2(side * horizontalSpeed, verticalSpeed), duration);
+    }
+
+    /// <summary>Stops the player dead (used when paralyzed): cancels a dash, a cling and any knockback, and zeroes the speed.</summary>
+    public void Paralyze()
+    {
+        isDashing = false;
+        dashTimer = 0f;
+        dashCooldownTimer = dashCooldown;
+        isClinging = false;
+        clingLockout = false;
+        recoilTimer = 0f;
+        rb.linearVelocity = Vector2.zero;
     }
 
     /// <summary>Moves the player somewhere instantly and clears dashing, clinging, recoil and speed. Used when respawning.</summary>
@@ -237,7 +274,8 @@ public class PlayerController : MonoBehaviour
 
         // --- Ground check ---
         isGrounded = CheckGrounded();
-        if ((isGrounded || isClinging) && !isDashing) // clinging counts like standing on something
+        UpdateWater();
+        if ((isGrounded || isClinging || isSwimming) && !isDashing) // clinging or swimming counts like standing on something
         {
             airDashAvailable = true;
             doubleJumpAvailable = true;
@@ -274,6 +312,14 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
+        // --- Swimming: the jump button only matters at the surface (jump out of the water) ---
+        if (isSwimming)
+        {
+            jumpBufferCounter = 0f;
+            TrySurfaceJump();
+            return;
+        }
+
         // --- Jump ---
         if (jumpBufferCounter > 0f && coyoteCounter > 0f)
         {
@@ -300,7 +346,7 @@ public class PlayerController : MonoBehaviour
         if (isDashing)
         {
             rb.gravityScale = 0f;
-            rb.linearVelocity = dashDirection * dashSpeed;
+            rb.linearVelocity = dashDirection * dashSpeed * (isSwimming ? waterDashSpeedMultiplier : 1f); // slower in water
             return;
         }
 
@@ -308,6 +354,12 @@ public class PlayerController : MonoBehaviour
         {
             rb.gravityScale = 0f;
             rb.linearVelocity = Vector2.zero;
+            return;
+        }
+
+        if (isSwimming)
+        {
+            SwimMove(Time.fixedDeltaTime);
             return;
         }
 
@@ -332,13 +384,93 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, -maxFallSpeed);
     }
 
+    // ---------------- Swimming ----------------
+
+    // Which water (if any) is the player in, and can they breathe right now?
+    private void UpdateWater()
+    {
+        currentWater = WaterZone.Find(transform.position);
+        isSwimming = currentWater != null;
+
+        // Is there more water right above this one? (stacked pools: then the top edge isn't a real surface)
+        waterAboveSurface = currentWater != null &&
+            WaterZone.Find(new Vector2(transform.position.x, currentWater.SurfaceY + 0.1f)) != null;
+
+        PlayerStats stats = PlayerStats.Instance;
+        if (stats != null)
+        {
+            bool headAboveWater = isSwimming && BodyBounds.max.y - 0.1f > currentWater.SurfaceY;
+            stats.SetCanBreathe(!isSwimming || (breatheAtSurface && headAboveWater));
+        }
+    }
+
+    private bool IsNearSurface()
+    {
+        return currentWater != null && !waterAboveSurface &&
+               currentWater.SurfaceY - rb.position.y <= surfaceJumpDepth;
+    }
+
+    // Pressing jump close to the surface throws the player up and out of the water
+    private void TrySurfaceJump()
+    {
+        if (!jumpPressed || !IsNearSurface()) return;
+
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, surfaceJumpSpeed);
+        surfaceJumpTimer = 0.4f; // during this moment the surface doesn't hold you back
+    }
+
+    // Swimming: no gravity (neutral buoyancy), 360 degree movement, slow acceleration and a short glide
+    private void SwimMove(float dt)
+    {
+        rb.gravityScale = 0f;
+        Vector2 velocity = rb.linearVelocity;
+
+        // Knocked back (hurt): follow the knockback, then the water slows you
+        if (recoilTimer > 0f)
+        {
+            recoilTimer -= dt;
+            velocity.x = recoilVelocityX * Mathf.Clamp01(recoilTimer / recoilTotal);
+            velocity.y = Mathf.MoveTowards(velocity.y, 0f, swimDeceleration * dt);
+            rb.linearVelocity = velocity;
+            return;
+        }
+
+        // Any direction. The jump key also swims up.
+        Vector2 input = new Vector2(moveInput, verticalInput);
+        if (jumpHeld) input.y = Mathf.Max(input.y, 1f);
+        bool hasInput = input.sqrMagnitude > 0.01f;
+        if (input.sqrMagnitude > 1f) input.Normalize();
+
+        Vector2 desired = input * swimSpeed * SpeedMultiplier;
+
+        // Low acceleration to speed up, a gentle deceleration to stop: that's the glide
+        float rate = hasInput ? swimAcceleration : swimDeceleration;
+        if (velocity.magnitude > swimSpeed * 1.1f) rate = Mathf.Max(rate, waterEntryDrag); // diving in slows you quickly
+
+        velocity = Vector2.MoveTowards(velocity, desired, rate * dt);
+
+        // The surface holds you in: you can't swim out of the water, you have to jump out of it
+        if (surfaceJumpTimer > 0f)
+        {
+            surfaceJumpTimer -= dt;
+        }
+        else if (velocity.y > 0f && currentWater != null && !waterAboveSurface)
+        {
+            float limit = currentWater.SurfaceY - 0.04f;
+            float next = rb.position.y + velocity.y * dt;
+            if (next > limit) velocity.y = Mathf.Max(0f, (limit - rb.position.y) / dt);
+        }
+
+        rb.linearVelocity = velocity;
+    }
+
     // ---------------- Crouch ----------------
 
     private void UpdateCrouch()
     {
         if (bodyCollider == null) return;
 
-        bool wantsCrouch = GameControls.Held(GameAction.Crouch) && isGrounded && !isDashing && !isClinging && !InputLock.IsLocked;
+        bool wantsCrouch = GameControls.Held(GameAction.Crouch) && isGrounded && !isDashing && !isClinging && !isSwimming && !InputLock.IsLocked;
 
         if (wantsCrouch && !isCrouching)
         {
