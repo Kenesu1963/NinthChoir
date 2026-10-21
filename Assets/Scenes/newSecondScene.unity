@@ -1333,11 +1333,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2348806853400548770, guid: 3b1bc84161071ffadbd940b8a2795033, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -76
+      value: -34.15
       objectReference: {fileID: 0}
     - target: {fileID: 2348806853400548770, guid: 3b1bc84161071ffadbd940b8a2795033, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.58
+      value: 2.04
       objectReference: {fileID: 0}
     - target: {fileID: 2348806853400548770, guid: 3b1bc84161071ffadbd940b8a2795033, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2767,6 +2767,8 @@ MonoBehaviour:
   waveSpeed: 1.5
   lightLines: 3
   foamThickness: 0.12
+  thickness: 1
+  drift: 0
   sortingOrder: 2
 --- !u!61 &901144390
 BoxCollider2D:
@@ -3020,6 +3022,8 @@ MonoBehaviour:
   waveSpeed: 1.5
   lightLines: 3
   foamThickness: 0.12
+  thickness: 1
+  drift: 0
   sortingOrder: 2
 --- !u!61 &951766303
 BoxCollider2D:
@@ -4708,6 +4712,8 @@ MonoBehaviour:
   waveSpeed: 1.5
   lightLines: 3
   foamThickness: 0.12
+  thickness: 1
+  drift: 0
   sortingOrder: 2
 --- !u!61 &1411742710
 BoxCollider2D:
@@ -5242,6 +5248,8 @@ MonoBehaviour:
   waveSpeed: 1.5
   lightLines: 3
   foamThickness: 0.12
+  thickness: 1
+  drift: 0
   sortingOrder: 2
 --- !u!61 &1545589327
 BoxCollider2D:
@@ -6138,6 +6146,8 @@ MonoBehaviour:
   waveSpeed: 1.5
   lightLines: 3
   foamThickness: 0.12
+  thickness: 1
+  drift: 0
   sortingOrder: 2
 --- !u!61 &1797973801
 BoxCollider2D:

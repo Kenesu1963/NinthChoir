@@ -35,8 +35,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float swimAcceleration = 10f;
     [Tooltip("How quickly you slow down when you stop. Low = you glide further. Around 8 gives a short glide (momentum, not ice).")]
     [SerializeField] private float swimDeceleration = 8f;
-    [Tooltip("How fast the water slows you if you dive in faster than swim speed.")]
-    [SerializeField] private float waterEntryDrag = 30f;
+    [Tooltip("Diving in: how many seconds the water takes to kill your momentum (0.1 to 0.2 feels right). Thicker water kills it even faster.")]
+    [SerializeField] private float waterEntrySlowSeconds = 0.15f;
     [Tooltip("Dash speed in water compared to normal. Below 1 = slower.")]
     [SerializeField] private float waterDashSpeedMultiplier = 0.55f;
     [Tooltip("The upward speed of the jump out of the water (press Jump near the surface).")]
@@ -98,10 +98,18 @@ public class PlayerController : MonoBehaviour
     private WaterZone currentWater;
     private bool waterAboveSurface;
     private float surfaceJumpTimer;
+    private bool wasSwimming;
+    private PlayerStats myStats;
+    private float entryTimer;
+    private float entryTime = 0.15f;
+    private float entryExcess;
     private bool clingLockout; // after jumping off, you must let go of the button and press it again
 
     public bool IsClinging => isClinging;
     public bool IsSwimming => isSwimming;
+
+    /// <summary>The middle of the player's body (where the collider actually is).</summary>
+    private Vector2 BodyCenter => bodyCollider != null ? (Vector2)bodyCollider.bounds.center : (Vector2)transform.position;
     public Bounds BodyBounds => bodyCollider != null ? bodyCollider.bounds : new Bounds(transform.position, Vector3.one);
 
     /// <summary>Sticks the player to a wall. wallSide: -1 = wall on the left, +1 = wall on the right.</summary>
@@ -228,6 +236,14 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        myStats = GetComponent<PlayerStats>();
+
+        // Two Player Controllers make everything fight each other (water, air, input...)
+        if (GetComponents<PlayerController>().Length > 1 || FindObjectsByType<PlayerController>(FindObjectsSortMode.None).Length > 1)
+        {
+            Debug.LogError("There is MORE THAN ONE Player Controller in this scene (check the Hierarchy for a duplicated Player, " +
+                           "or a Player Controller added twice). Keep only one.", this);
+        }
 
         boxCollider = GetComponent<BoxCollider2D>();
         capsuleCollider = GetComponent<CapsuleCollider2D>();
@@ -346,7 +362,8 @@ public class PlayerController : MonoBehaviour
         if (isDashing)
         {
             rb.gravityScale = 0f;
-            rb.linearVelocity = dashDirection * dashSpeed * (isSwimming ? waterDashSpeedMultiplier : 1f); // slower in water
+            float waterDash = isSwimming ? waterDashSpeedMultiplier * (currentWater != null ? currentWater.DashFactor : 1f) : 1f;
+            rb.linearVelocity = dashDirection * dashSpeed * waterDash; // slower in water, even slower in thick water
             return;
         }
 
@@ -389,14 +406,25 @@ public class PlayerController : MonoBehaviour
     // Which water (if any) is the player in, and can they breathe right now?
     private void UpdateWater()
     {
-        currentWater = WaterZone.Find(transform.position);
+        wasSwimming = isSwimming;
+        currentWater = WaterZone.Find(BodyCenter);
+        if (currentWater == null) currentWater = WaterZone.Find(transform.position);
         isSwimming = currentWater != null;
+
+        // Just dived in: the water kills the momentum over a fraction of a second
+        if (isSwimming && !wasSwimming)
+        {
+            float topSpeed = swimSpeed * currentWater.SwimSpeedFactor;
+            entryExcess = Mathf.Max(0f, rb.linearVelocity.magnitude - topSpeed);
+            entryTime = Mathf.Max(0.03f, waterEntrySlowSeconds / currentWater.Thickness);
+            entryTimer = entryTime;
+        }
 
         // Is there more water right above this one? (stacked pools: then the top edge isn't a real surface)
         waterAboveSurface = currentWater != null &&
             WaterZone.Find(new Vector2(transform.position.x, currentWater.SurfaceY + 0.1f)) != null;
 
-        PlayerStats stats = PlayerStats.Instance;
+        PlayerStats stats = myStats != null ? myStats : PlayerStats.Instance; // this player's own stats
         if (stats != null)
         {
             bool headAboveWater = isSwimming && BodyBounds.max.y - 0.1f > currentWater.SurfaceY;
@@ -407,7 +435,7 @@ public class PlayerController : MonoBehaviour
     private bool IsNearSurface()
     {
         return currentWater != null && !waterAboveSurface &&
-               currentWater.SurfaceY - rb.position.y <= surfaceJumpDepth;
+               currentWater.SurfaceY - BodyCenter.y <= surfaceJumpDepth;
     }
 
     // Pressing jump close to the surface throws the player up and out of the water
@@ -441,11 +469,24 @@ public class PlayerController : MonoBehaviour
         bool hasInput = input.sqrMagnitude > 0.01f;
         if (input.sqrMagnitude > 1f) input.Normalize();
 
-        Vector2 desired = input * swimSpeed * SpeedMultiplier;
+        // The thickness of this water changes everything: top speed, how fast you speed up, how long you glide
+        float thickSpeed = currentWater != null ? currentWater.SwimSpeedFactor : 1f;
+        float thickAccel = currentWater != null ? currentWater.AccelerationFactor : 1f;
+        float thickGlide = currentWater != null ? currentWater.GlideFactor : 1f;
+        float drift = currentWater != null ? currentWater.Drift : 0f;
+
+        Vector2 desired = input * swimSpeed * thickSpeed * SpeedMultiplier;
+        desired.y += drift; // some waters push you up or pull you down
 
         // Low acceleration to speed up, a gentle deceleration to stop: that's the glide
-        float rate = hasInput ? swimAcceleration : swimDeceleration;
-        if (velocity.magnitude > swimSpeed * 1.1f) rate = Mathf.Max(rate, waterEntryDrag); // diving in slows you quickly
+        float rate = hasInput ? swimAcceleration * thickAccel : swimDeceleration * thickGlide;
+
+        // Diving in: the extra speed is removed in a fraction of a second, but not instantly
+        if (entryTimer > 0f)
+        {
+            entryTimer -= dt;
+            rate = Mathf.Max(rate, entryExcess / entryTime);
+        }
 
         velocity = Vector2.MoveTowards(velocity, desired, rate * dt);
 
@@ -457,8 +498,9 @@ public class PlayerController : MonoBehaviour
         else if (velocity.y > 0f && currentWater != null && !waterAboveSurface)
         {
             float limit = currentWater.SurfaceY - 0.04f;
-            float next = rb.position.y + velocity.y * dt;
-            if (next > limit) velocity.y = Mathf.Max(0f, (limit - rb.position.y) / dt);
+            float centerY = BodyCenter.y;
+            float next = centerY + velocity.y * dt;
+            if (next > limit) velocity.y = Mathf.Max(0f, (limit - centerY) / dt);
         }
 
         rb.linearVelocity = velocity;
@@ -575,7 +617,17 @@ public class PlayerController : MonoBehaviour
             "   vert: " + verticalInput +
             "   space: " + jumpHeld +
             "   dashing: " + isDashing +
-            "   airJump: " + doubleJumpAvailable);
+            "   airJump: " + doubleJumpAvailable +
+            "   swim: " + isSwimming +
+            "   air: " + (PlayerStats.Instance != null ? PlayerStats.Instance.Breath.ToString("0.0") : "-"));
+
+        // Second line: exactly what the water check sees
+        Vector2 here = BodyCenter;
+        GUI.Label(new Rect(12, 28, 1400, 30),
+            "body at (" + here.x.ToString("0.0") + ", " + here.y.ToString("0.0") + ")" +
+            "   water zones: " + WaterZone.Count +
+            "   in water: " + (WaterZone.Find(here) != null) +
+            "   nearest: " + WaterZone.Describe(here));
     }
 
     private void OnDrawGizmosSelected()

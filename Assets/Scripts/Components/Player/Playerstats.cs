@@ -121,6 +121,11 @@ public class PlayerStats : MonoBehaviour, IDamageable
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogError("There are TWO Players in this scene: '" + Instance.name + "' and '" + name + "'. " +
+                           "Delete one of them, or water, bubbles, enemies and the HUD will get confused.", this);
+        }
         Instance = this;
         controller = GetComponent<PlayerController>();
         bodySprite = GetComponentInChildren<SpriteRenderer>();

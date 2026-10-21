@@ -28,6 +28,15 @@ public class WaterZone : MonoBehaviour
     [SerializeField] private int lightLines = 3;
     [SerializeField] private float foamThickness = 0.12f;
 
+    [Header("Thickness (changes how it feels to move)")]
+    [Tooltip("1 = water. Below 1 = thin and slippery: faster, quicker to speed up, glides further, slower to kill a dive. " +
+             "Above 1 = thick like mud or syrup: slower, slow to speed up, stops quickly, kills a dive almost at once. " +
+             "It also slows enemies more.")]
+    [Range(0.2f, 4f)] [SerializeField] private float thickness = 1f;
+    [Tooltip("A constant vertical push in units per second when the player isn't swimming up or down. " +
+             "Positive floats you up, negative sinks you, 0 = neutral (stay where you are).")]
+    [SerializeField] private float drift = 0f;
+
     [Header("Drawing")]
     [Tooltip("Higher draws in front. The default draws the water over the player and enemies.")]
     [SerializeField] private int sortingOrder = 12;
@@ -41,16 +50,85 @@ public class WaterZone : MonoBehaviour
     private readonly List<int> triangles = new List<int>();
 
     /// <summary>The height of the water's surface in the world.</summary>
-    public float SurfaceY => box != null ? box.bounds.max.y : transform.position.y;
+    public float SurfaceY
+    {
+        get
+        {
+            if (box == null) return transform.position.y;
+            Vector2 min, max;
+            GetBounds(out min, out max);
+            return max.y;
+        }
+    }
+
+    // How thickness changes the movement of the player and of enemies
+    public float Thickness => Mathf.Max(0.05f, thickness);
+    public float SwimSpeedFactor => Mathf.Pow(Thickness, -0.7f);     // thick = slower top speed
+    public float AccelerationFactor => Mathf.Pow(Thickness, -0.5f);  // thick = slower to get going
+    public float GlideFactor => Thickness;                           // thick = stops faster, thin = glides further
+    public float DashFactor => Mathf.Pow(Thickness, -0.5f);          // thick = shorter, slower dash
+    public float Drift => drift;
+
+    /// <summary>How much an enemy's speed is multiplied in this water. baseMultiplier is the enemy's own setting (0.5 = half speed in normal water).</summary>
+    public float EnemySpeedFactor(float baseMultiplier)
+    {
+        return Mathf.Clamp(Mathf.Pow(Mathf.Clamp(baseMultiplier, 0.05f, 1f), Thickness), 0.05f, 1f);
+    }
+
+    public static int Count => all.Count;
+
+    /// <summary>For the on-screen debug line: the nearest water and its rectangle.</summary>
+    public static string Describe(Vector2 point)
+    {
+        if (all.Count == 0) return "no Water Zone is active in the scene";
+
+        WaterZone nearest = null;
+        float best = float.MaxValue;
+        foreach (WaterZone zone in all)
+        {
+            if (zone.box == null) continue;
+            Vector2 min, max;
+            zone.GetBounds(out min, out max);
+            Vector2 closest = new Vector2(Mathf.Clamp(point.x, min.x, max.x), Mathf.Clamp(point.y, min.y, max.y));
+            float d = (closest - point).sqrMagnitude;
+            if (d < best) { best = d; nearest = zone; }
+        }
+        if (nearest == null) return "none usable";
+
+        Vector2 lo, hi;
+        nearest.GetBounds(out lo, out hi);
+        return nearest.name + " x[" + lo.x.ToString("0.0") + " to " + hi.x.ToString("0.0") + "]  y[" +
+               lo.y.ToString("0.0") + " to " + hi.y.ToString("0.0") + "]" + (nearest.box.enabled ? "" : "  (collider disabled!)");
+    }
 
     /// <summary>The water that contains this point (or null).</summary>
     public static WaterZone Find(Vector2 point)
     {
         foreach (WaterZone zone in all)
         {
-            if (zone.box != null && zone.box.enabled && zone.box.OverlapPoint(point)) return zone;
+            if (zone.Contains(point)) return zone;
         }
         return null;
+    }
+
+    /// <summary>Is the point inside the water? A plain box test from the object's position and the collider's size.</summary>
+    public bool Contains(Vector2 point)
+    {
+        if (box == null || !box.enabled) return false;
+
+        Vector2 min, max;
+        GetBounds(out min, out max);
+        return point.x >= min.x && point.x <= max.x && point.y >= min.y && point.y <= max.y;
+    }
+
+    // The water's rectangle in the world, worked out directly (it doesn't wait for the physics engine to update)
+    private void GetBounds(out Vector2 min, out Vector2 max)
+    {
+        Vector2 center = transform.TransformPoint(box.offset);
+        Vector3 scale = transform.lossyScale;
+        Vector2 half = new Vector2(box.size.x * Mathf.Abs(scale.x), box.size.y * Mathf.Abs(scale.y)) * 0.5f;
+        min = center - half;
+        max = center + half;
     }
 
     private void Reset()
@@ -93,7 +171,7 @@ public class WaterZone : MonoBehaviour
 
     private void Update()
     {
-        if (mesh != null) BuildMesh(Time.time);
+        if (mesh != null) BuildMesh(Time.time * Mathf.Pow(Thickness, -0.5f)); // thick water ripples slowly
     }
 
     // =====================================================================
